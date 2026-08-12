@@ -172,6 +172,28 @@ h3{font-size:16px;color:var(--vert-fonce);margin:0 0 8px}
 .onglet.actif{color:var(--vert-fonce);border-bottom-color:var(--vert)}
 .section-reglage{background:#fff;border:1px solid var(--creme-bordure);border-radius:var(--rayon);padding:20px 22px;margin-bottom:18px}
 .section-reglage>h2{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* Réglages : navigation latérale */
+.reglages-disposition{display:flex;gap:20px;align-items:flex-start}
+.reglages-nav{
+  flex:0 0 224px;display:flex;flex-direction:column;gap:6px;position:sticky;top:18px;
+  background:#fff;border:1px solid var(--creme-bordure);border-radius:var(--rayon);padding:10px;
+}
+.reglages-nav-item{
+  font:inherit;font-weight:700;font-size:14.5px;text-align:left;padding:11px 14px;
+  border:none;border-left:4px solid transparent;border-radius:10px;background:none;
+  color:var(--gris);cursor:pointer;transition:.15s;
+}
+.reglages-nav-item:hover{background:#EEF3E6;color:var(--vert-fonce)}
+.reglages-nav-item.actif{background:var(--vert);color:#fff;border-left-color:var(--lime)}
+.reglages-contenu{flex:1;min-width:0}
+.reglages-contenu .section-reglage{margin-bottom:0}
+
+@media(max-width:760px){
+  .reglages-disposition{flex-direction:column}
+  .reglages-nav{position:static;flex:none;width:100%;flex-direction:row;overflow-x:auto;padding:8px}
+  .reglages-nav-item{flex:0 0 auto;white-space:nowrap;border-left:none}
+}
 .zone-dangereuse{border-color:#E8C4BA;background:#FDF6F4}
 .zone-dangereuse h2{color:var(--erreur)}
 
@@ -343,9 +365,21 @@ tr:nth-child(even) td{background:#F7FAF1}
 
       <!-- ---------- Panneau Réglages ---------- -->
       <div id="panneau-reglages" class="cache">
+       <div class="reglages-disposition">
+
+        <nav class="reglages-nav" aria-label="Sections des réglages">
+          <button class="reglages-nav-item actif" data-section-reglage="accueil" type="button">Texte d'accueil et seuil</button>
+          <button class="reglages-nav-item" data-section-reglage="questions" type="button">Questions du quiz</button>
+          <button class="reglages-nav-item" data-section-reglage="roue" type="button">Roue de la fortune</button>
+          <button class="reglages-nav-item" data-section-reglage="formulaire" type="button">Formulaire de captation</button>
+          <button class="reglages-nav-item" data-section-reglage="motdepasse" type="button">Mot de passe</button>
+          <button class="reglages-nav-item" data-section-reglage="donnees" type="button">Données</button>
+        </nav>
+
+        <div class="reglages-contenu">
 
         <!-- Accueil et seuil -->
-        <div class="section-reglage">
+        <div class="section-reglage" data-section-reglage="accueil">
           <h2>Texte d'accueil et seuil de réussite</h2>
           <div class="avis cache" id="avis-accueil"></div>
           <div class="champ">
@@ -368,7 +402,7 @@ tr:nth-child(even) td{background:#F7FAF1}
         </div>
 
         <!-- Questions -->
-        <div class="section-reglage">
+        <div class="section-reglage cache" data-section-reglage="questions">
           <h2>Questions du quiz <span class="compteur" id="compte-questions"></span></h2>
           <div class="avis cache" id="avis-questions"></div>
           <div id="liste-questions"></div>
@@ -379,7 +413,7 @@ tr:nth-child(even) td{background:#F7FAF1}
         </div>
 
         <!-- Roue -->
-        <div class="section-reglage">
+        <div class="section-reglage cache" data-section-reglage="roue">
           <h2>Roue de la fortune</h2>
           <div class="avis cache" id="avis-roue"></div>
           <div class="avis info" id="rappel-illimite"></div>
@@ -392,7 +426,7 @@ tr:nth-child(even) td{background:#F7FAF1}
         </div>
 
         <!-- Formulaire -->
-        <div class="section-reglage">
+        <div class="section-reglage cache" data-section-reglage="formulaire">
           <h2>Formulaire de captation</h2>
           <div class="avis cache" id="avis-formulaire"></div>
           <div class="onglets" style="margin-bottom:16px">
@@ -411,7 +445,7 @@ tr:nth-child(even) td{background:#F7FAF1}
         </div>
 
         <!-- Mot de passe -->
-        <div class="section-reglage">
+        <div class="section-reglage cache" data-section-reglage="motdepasse">
           <h2>Mot de passe administrateur</h2>
           <div class="avis cache" id="avis-mot-de-passe"></div>
           <div class="grille-2">
@@ -435,7 +469,7 @@ tr:nth-child(even) td{background:#F7FAF1}
         </div>
 
         <!-- Données -->
-        <div class="section-reglage zone-dangereuse">
+        <div class="section-reglage zone-dangereuse cache" data-section-reglage="donnees">
           <h2>Données</h2>
           <div class="avis cache" id="avis-donnees"></div>
           <p class="note">
@@ -456,6 +490,8 @@ tr:nth-child(even) td{background:#F7FAF1}
           </div>
         </div>
 
+        </div>
+       </div>
       </div>
     </section>
 
@@ -1694,6 +1730,7 @@ tr:nth-child(even) td{background:#F7FAF1}
   var Admin = {};
   var brouillon = null;      /* copie de travail de la configuration */
   var ongletActif = 'prospects';
+  var sectionReglageActive = 'accueil';
 
   function config() { return App.config(); }
   function cloner() { brouillon = Utils.copieProfonde(config()); return brouillon; }
@@ -1719,6 +1756,7 @@ tr:nth-child(even) td{background:#F7FAF1}
 
   Admin.ouvrir = function () {
     cloner();
+    sectionReglageActive = 'accueil';
     App.afficherEcran('admin');
     Admin.activerOnglet('prospects');
   };
@@ -1869,10 +1907,22 @@ tr:nth-child(even) td{background:#F7FAF1}
 
   Admin.rendreReglages = function () {
     if (!brouillon) cloner();
+    Admin.activerSectionReglage(sectionReglageActive);
     Admin.rendreAccueilReglage();
     Admin.rendreQuestions();
     Admin.rendreRoueReglage();
     Admin.rendreFormulaireReglage();
+  };
+
+  /* Navigation latérale des réglages : une seule section visible à la fois */
+  Admin.activerSectionReglage = function (nom) {
+    sectionReglageActive = nom;
+    Utils.$$('.reglages-nav-item').forEach(function (b) {
+      b.classList.toggle('actif', b.dataset.sectionReglage === nom);
+    });
+    Utils.$$('#panneau-reglages .section-reglage').forEach(function (section) {
+      section.classList.toggle('cache', section.dataset.sectionReglage !== nom);
+    });
   };
 
   /* ----- Texte d'accueil et seuil ----- */
@@ -2373,6 +2423,11 @@ tr:nth-child(even) td{background:#F7FAF1}
       onglet.addEventListener('click', function () { Admin.activerOnglet(onglet.dataset.onglet); });
     });
     lier('admin-quitter', 'click', Admin.fermer);
+
+    /* Navigation latérale des réglages */
+    Utils.$$('.reglages-nav-item').forEach(function (element) {
+      element.addEventListener('click', function () { Admin.activerSectionReglage(element.dataset.sectionReglage); });
+    });
 
     /* Prospects */
     lier('prospects-exporter', 'click', Admin.exporterCSV);
