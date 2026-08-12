@@ -1,0 +1,43 @@
+name: Publier sur GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Droits requis par le déploiement Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois ; on ne coupe pas celui qui est en cours
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Le fichier de l'application devient la page d'accueil du site.
+      # Ainsi il n'existe qu'un seul exemplaire du HTML dans le dépôt :
+      # on modifie quiz-et-roue-de-la-fortune.html, et rien d'autre.
+      - name: Assembler le site
+        run: |
+          mkdir -p _site
+          cp quiz-et-roue-de-la-fortune.html _site/index.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
