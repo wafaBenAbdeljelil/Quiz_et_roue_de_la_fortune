@@ -1,0 +1,2418 @@
+<!DOCTYPE html>
+<!--
+  Quiz et roue de la fortune - CRAAQ
+  Version 1.0.0 - assemblé le 2026-08-11
+  Fichier autonome : aucune connexion ni installation requise.
+  Ne pas modifier directement ; modifier les sources puis relancer « npm run build ».
+-->
+
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz et roue de la fortune — CRAAQ</title>
+<style>
+/* Identité visuelle CRAAQ — PRD §7.6 */
+:root{
+  --vert:#2E6B3E; --vert-fonce:#1E4A2A; --vert-tres-fonce:#142f1a;
+  --lime:#A2D95A; --lime-fonce:#6FA22B;
+  --creme:#F3F7EC; --creme-bordure:#D9E2CF;
+  --encre:#1E3A16; --gris:#5C6660; --dore:#E0A82E;
+  --erreur:#C0492F; --erreur-fond:#F8E9E5;
+  --succes-fond:#EAF5DA;
+  --blanc:#fff;
+  --rayon:14px; --rayon-large:26px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{
+  margin:0;min-height:100vh;font-family:'Segoe UI',Arial,sans-serif;color:var(--encre);
+  background:radial-gradient(120% 120% at 50% 0%, #295c33 0%, #1b3f24 55%, var(--vert-tres-fonce) 100%);
+  background-attachment:fixed;
+  display:flex;align-items:center;justify-content:center;padding:18px;
+}
+.carte{
+  width:min(920px,97vw);background:var(--creme);border-radius:var(--rayon-large);
+  box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column;margin:auto;
+}
+.carte.large{width:min(1180px,98vw)}
+
+/* En-tête et pied */
+.entete{background:var(--vert);padding:16px 26px;display:flex;align-items:center;gap:16px}
+.entete img{height:46px}
+.entete .titre{color:#fff;font-weight:800;font-size:18px}
+.pied{
+  background:#EEF3E6;padding:12px 26px;color:var(--gris);font-size:12.5px;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+}
+.pied a{color:var(--gris);text-decoration:none;opacity:.75;font-size:12px;cursor:pointer}
+.pied a:hover{opacity:1;text-decoration:underline}
+
+.contenu{padding:30px 34px}
+.interieur{max-width:640px;margin:0 auto}
+.centre{text-align:center}
+.cache{display:none !important}
+
+h1{margin:.1em 0 .3em;font-size:30px;color:var(--vert-fonce);text-align:center}
+h2{font-size:20px;color:var(--vert-fonce);margin:0 0 12px}
+h3{font-size:16px;color:var(--vert-fonce);margin:0 0 8px}
+.intro{color:var(--gris);font-size:17px;line-height:1.5;margin-bottom:24px;text-align:center}
+
+/* Boutons */
+.bouton{
+  font:inherit;font-weight:800;font-size:17px;padding:14px 30px;border:none;border-radius:40px;
+  cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:10px;justify-content:center;
+}
+.bouton.principal{background:var(--vert);color:#fff}
+.bouton.principal:hover{background:var(--vert-fonce)}
+.bouton.accent{background:var(--lime);color:var(--vert-fonce)}
+.bouton.accent:hover{filter:brightness(1.05)}
+.bouton.discret{background:#E4EBDA;color:var(--vert-fonce);font-size:15px;padding:11px 20px}
+.bouton.discret:hover{background:#D7E2C8}
+.bouton.danger{background:var(--erreur);color:#fff}
+.bouton.danger:hover{filter:brightness(1.08)}
+.bouton.petit{font-size:14px;padding:9px 16px;border-radius:24px}
+.bouton[disabled]{opacity:.5;cursor:default}
+.actions{margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center}
+.actions.gauche{justify-content:flex-start}
+.fleche{font-size:14px}
+
+/* Quiz */
+.progression{display:flex;justify-content:space-between;color:var(--gris);font-weight:700;font-size:14px;margin-bottom:6px}
+.barre{height:8px;background:#DFE7D4;border-radius:20px;overflow:hidden;margin-bottom:24px}
+.barre>i{display:block;height:100%;width:0;background:var(--lime);transition:width .4s}
+.question{font-size:23px;font-weight:800;line-height:1.35;margin-bottom:20px;text-align:center}
+.options{display:grid;gap:12px}
+.option{
+  font:inherit;text-align:left;padding:15px 18px;border:2px solid var(--creme-bordure);background:#fff;
+  border-radius:var(--rayon);font-size:17px;font-weight:600;color:var(--encre);cursor:pointer;
+  transition:.15s;display:flex;gap:12px;align-items:center;
+}
+.option:hover:not(:disabled){border-color:var(--lime-fonce)}
+.option .lettre{
+  width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:#EEF3E6;color:var(--vert-fonce);
+  font-weight:800;display:flex;align-items:center;justify-content:center;
+}
+.option.bonne{border-color:var(--lime-fonce);background:var(--succes-fond)}
+.option.bonne .lettre{background:var(--lime-fonce);color:#fff}
+.option.mauvaise{border-color:var(--erreur);background:var(--erreur-fond)}
+.option.mauvaise .lettre{background:var(--erreur);color:#fff}
+.option:disabled{cursor:default}
+.detail{
+  margin-top:20px;background:#EEF5E2;border-left:6px solid var(--lime-fonce);padding:14px 18px;
+  border-radius:10px;font-size:15.5px;line-height:1.5;
+}
+.detail.echoue{background:#FDF0D9;border-left-color:var(--dore)}
+.detail strong{color:var(--vert-fonce)}
+
+/* Résultat */
+.score{font-size:58px;font-weight:900;color:var(--vert);line-height:1;text-align:center}
+.score-detail{font-size:18px;color:var(--gris);text-align:center;margin-top:6px}
+
+/* Roue */
+.scene{position:relative;width:min(70vw,420px);aspect-ratio:1/1;margin:34px auto 0}
+.pointeur{
+  position:absolute;top:-4px;left:50%;transform:translateX(-50%);z-index:5;width:0;height:0;
+  border-left:20px solid transparent;border-right:20px solid transparent;border-top:36px solid var(--dore);
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.4));
+}
+#roue-canvas{width:100%;height:100%;border-radius:50%;box-shadow:0 12px 32px rgba(0,0,0,.25),0 0 0 10px rgba(46,107,62,.10)}
+.moyeu{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:26%;height:26%;border-radius:50%;
+  background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;
+  z-index:4;overflow:hidden;
+}
+.moyeu img{width:82%;height:82%;object-fit:contain}
+
+/* Formulaire */
+.champ{margin-bottom:16px;text-align:left}
+.champ>label,.champ .libelle{display:block;font-weight:700;font-size:15px;margin-bottom:6px}
+.champ .obligatoire{color:var(--erreur);margin-left:3px}
+.champ .aide{font-size:13px;color:var(--gris);margin:-2px 0 6px}
+.champ input[type=text],.champ input[type=email],.champ input[type=password],.champ input[type=number],
+.champ select,.champ textarea{
+  width:100%;font:inherit;font-size:17px;padding:12px 14px;border:2px solid var(--creme-bordure);
+  border-radius:12px;background:#fff;color:var(--encre);
+}
+.champ textarea{min-height:88px;resize:vertical;font-size:15px}
+.champ input:focus,.champ select:focus,.champ textarea:focus{outline:none;border-color:var(--lime-fonce)}
+.champ.en-erreur input,.champ.en-erreur select,.champ.en-erreur .case-groupe{border-color:var(--erreur)}
+.champ .message-erreur{color:var(--erreur);font-size:13.5px;font-weight:700;margin-top:6px}
+.case-groupe{background:#fff;border:2px solid var(--creme-bordure);border-radius:12px;padding:12px 14px}
+.case-ligne{display:flex;gap:11px;align-items:flex-start;padding:5px 0}
+.case-ligne input{width:21px;height:21px;margin-top:2px;flex:0 0 21px}
+.case-ligne label{font-size:15px;line-height:1.45;cursor:pointer}
+.consentement{display:flex;gap:12px;align-items:flex-start;background:#fff;border:2px solid var(--creme-bordure);border-radius:12px;padding:14px}
+.consentement input{width:22px;height:22px;margin-top:2px;flex:0 0 22px}
+.consentement label{font-size:14.5px;line-height:1.45;cursor:pointer}
+
+/* Messages */
+.avis{padding:14px 18px;border-radius:10px;font-size:15.5px;line-height:1.5;margin-bottom:16px;border-left:6px solid}
+.avis.info{background:#EEF5E2;border-left-color:var(--lime-fonce)}
+.avis.attention{background:#FDF0D9;border-left-color:var(--dore)}
+.avis.erreur{background:var(--erreur-fond);border-left-color:var(--erreur);color:#7a2c1c;font-weight:600}
+.avis.succes{background:var(--succes-fond);border-left-color:var(--lime-fonce)}
+.avis ul{margin:6px 0 0;padding-left:20px}
+
+/* Modale */
+.voile{position:fixed;inset:0;background:rgba(15,30,12,.72);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.voile.visible{display:flex}
+.modale{background:var(--creme);border-radius:24px;max-width:460px;width:100%;text-align:center;padding:32px 30px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.modale .emoji{font-size:50px;margin-bottom:4px}
+.modale .etiquette{color:var(--gris);font-weight:700;letter-spacing:1px;font-size:14px}
+.modale .lot{font-size:30px;font-weight:900;color:var(--vert);margin:8px 0 4px;line-height:1.2}
+
+/* Administration */
+.onglets{display:flex;gap:8px;border-bottom:2px solid var(--creme-bordure);margin-bottom:22px;flex-wrap:wrap}
+.onglet{
+  font:inherit;font-weight:800;font-size:16px;padding:12px 22px;border:none;background:none;color:var(--gris);
+  cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;
+}
+.onglet:hover{color:var(--vert-fonce)}
+.onglet.actif{color:var(--vert-fonce);border-bottom-color:var(--vert)}
+.section-reglage{background:#fff;border:1px solid var(--creme-bordure);border-radius:var(--rayon);padding:20px 22px;margin-bottom:18px}
+.section-reglage>h2{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.zone-dangereuse{border-color:#E8C4BA;background:#FDF6F4}
+.zone-dangereuse h2{color:var(--erreur)}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border:1px solid var(--creme-bordure);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--vert);color:#fff;position:sticky;top:0;z-index:1}
+tr:nth-child(even) td{background:#F7FAF1}
+.tableau-defilant{max-height:50vh;overflow:auto;border:1px solid var(--creme-bordure);border-radius:10px}
+.pastille{display:inline-block;padding:2px 9px;border-radius:20px;font-weight:800;font-size:12px;white-space:nowrap}
+.pastille.oui{background:#E3F3CF;color:#3C6B1A}
+.pastille.non{background:#F1DED9;color:#9A3520}
+.pastille.neutre{background:#E9EDE3;color:var(--gris)}
+
+.element-liste{border:1px solid var(--creme-bordure);border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#FCFDFA}
+.element-liste .barre-titre{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.element-liste .barre-titre .nom{font-weight:800;font-size:15.5px;color:var(--vert-fonce)}
+.outils{display:flex;gap:6px;flex-wrap:wrap}
+.icone-bouton{
+  font:inherit;font-size:13px;font-weight:700;border:1px solid var(--creme-bordure);background:#fff;
+  color:var(--gris);border-radius:8px;padding:6px 10px;cursor:pointer;
+}
+.icone-bouton:hover{border-color:var(--lime-fonce);color:var(--vert-fonce)}
+.icone-bouton.rouge:hover{border-color:var(--erreur);color:var(--erreur)}
+.icone-bouton[disabled]{opacity:.4;cursor:default}
+.grille-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ligne-option{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
+.ligne-option .radio{margin-top:14px;flex:0 0 auto;display:flex;align-items:center;gap:6px}
+.ligne-option .champs{flex:1;display:grid;gap:6px}
+.ligne-option input[type=radio]{width:20px;height:20px}
+.compteur{font-size:13px;color:var(--gris);font-weight:600}
+.note{font-size:13px;color:var(--gris);line-height:1.5}
+
+@media(max-width:640px){
+  .contenu{padding:22px 18px}
+  h1{font-size:24px}
+  .question{font-size:20px}
+  .grille-2{grid-template-columns:1fr}
+  .entete{padding:14px 18px}
+  .entete img{height:38px}
+}
+
+</style>
+</head>
+<body>
+
+<div class="carte">
+  <header class="entete">
+    <img id="logo-entete" src="data:image/png;base64,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" alt="CRAAQ">
+    <div class="titre">Quiz et roue de la fortune</div>
+  </header>
+
+  <div class="contenu">
+
+    <!-- ============ ACCUEIL ============ -->
+    <section id="ecran-accueil">
+      <div class="interieur centre">
+        <h1 id="accueil-titre"></h1>
+        <p class="intro" id="accueil-texte"></p>
+        <button class="bouton principal" id="accueil-commencer" type="button">
+          Commencer <span class="fleche">&#9654;</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ QUIZ ============ -->
+    <section id="ecran-quiz" class="cache">
+      <div class="interieur">
+        <div class="progression"><span id="quiz-numero"></span><span id="quiz-score"></span></div>
+        <div class="barre"><i id="quiz-barre"></i></div>
+        <div class="question" id="quiz-question"></div>
+        <div class="options" id="quiz-options"></div>
+        <div class="detail cache" id="quiz-detail"></div>
+        <div class="actions cache" id="quiz-suivant-zone">
+          <button class="bouton principal" id="quiz-suivant" type="button"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RÉSULTAT ============ -->
+    <section id="ecran-resultat" class="cache">
+      <div class="interieur centre">
+        <div class="score" id="resultat-score"></div>
+        <div class="score-detail" id="resultat-pourcentage"></div>
+        <p class="intro" id="resultat-message" style="margin-top:18px"></p>
+        <div class="actions">
+          <button class="bouton principal" id="resultat-suite" type="button"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ROUE ============ -->
+    <section id="ecran-roue" class="cache">
+      <div class="interieur centre">
+        <h1>Tournez la roue!</h1>
+        <p class="intro">Bonne chance!</p>
+        <div class="scene">
+          <div class="pointeur"></div>
+          <canvas id="roue-canvas" width="620" height="620"></canvas>
+          <div class="moyeu"><img id="logo-moyeu" src="data:image/jpeg;base64,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" alt="CRAAQ"></div>
+        </div>
+        <div class="actions">
+          <button class="bouton accent" id="roue-tourner" type="button">TOURNER</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CAPTATION ============ -->
+    <section id="ecran-captation" class="cache">
+      <div class="interieur">
+        <h1>Vos coordonnées</h1>
+        <p class="intro" id="captation-intro"></p>
+        <div class="avis succes cache" id="captation-lot"></div>
+        <div class="avis cache" id="captation-avis"></div>
+        <div id="captation-champs"></div>
+        <div class="actions">
+          <button class="bouton principal" id="captation-valider" type="button">Valider</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONFIRMATION ============ -->
+    <section id="ecran-confirmation" class="cache">
+      <div class="interieur centre">
+        <div style="font-size:52px">&#127881;</div>
+        <h1 id="confirmation-titre"></h1>
+        <p class="intro" id="confirmation-message"></p>
+        <div class="actions">
+          <button class="bouton principal" id="confirmation-terminer" type="button">Terminer</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONNEXION ADMIN ============ -->
+    <section id="ecran-admin-connexion" class="cache">
+      <div class="interieur">
+        <h1>Administration</h1>
+        <p class="intro">Cette section est réservée à l'équipe du CRAAQ.</p>
+        <div class="champ">
+          <label for="admin-mot-de-passe">Mot de passe</label>
+          <input type="password" id="admin-mot-de-passe" autocomplete="current-password">
+          <div class="message-erreur cache" id="admin-erreur-connexion"></div>
+        </div>
+        <div class="actions">
+          <button class="bouton principal" id="admin-connexion-valider" type="button">Se connecter</button>
+          <button class="bouton discret" id="admin-connexion-retour" type="button">Retour</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ADMINISTRATION ============ -->
+    <section id="ecran-admin" class="cache">
+
+      <div class="onglets">
+        <button class="onglet actif" data-onglet="prospects" type="button">Prospects</button>
+        <button class="onglet" data-onglet="reglages" type="button">Réglages</button>
+        <button class="onglet" id="admin-quitter" type="button" style="margin-left:auto">Quitter</button>
+      </div>
+
+      <!-- ---------- Panneau Prospects ---------- -->
+      <div id="panneau-prospects">
+        <h2>Prospects collectés</h2>
+        <p class="note" id="prospects-compte" style="margin-bottom:14px"></p>
+        <div class="tableau-defilant"><table id="prospects-table"></table></div>
+        <div class="actions gauche">
+          <button class="bouton accent" id="prospects-exporter" type="button">Exporter en CSV (Excel)</button>
+          <button class="bouton discret" id="prospects-rafraichir" type="button">Rafraîchir</button>
+        </div>
+      </div>
+
+      <!-- ---------- Panneau Réglages ---------- -->
+      <div id="panneau-reglages" class="cache">
+
+        <!-- Accueil et seuil -->
+        <div class="section-reglage">
+          <h2>Texte d'accueil et seuil de réussite</h2>
+          <div class="avis cache" id="avis-accueil"></div>
+          <div class="champ">
+            <label for="reglage-titre">Titre d'accueil</label>
+            <input type="text" id="reglage-titre">
+          </div>
+          <div class="champ">
+            <label for="reglage-texte">Texte d'accueil</label>
+            <div class="aide">Écrivez <strong>{seuil}</strong> à l'endroit où le pourcentage doit apparaître : il se met à jour automatiquement.</div>
+            <textarea id="reglage-texte" rows="3"></textarea>
+          </div>
+          <div class="champ">
+            <label for="reglage-seuil">Seuil de réussite pour débloquer la roue (%)</label>
+            <input type="number" id="reglage-seuil" min="0" max="100" step="1" style="max-width:160px">
+          </div>
+          <div class="avis info"><strong>Aperçu :</strong> <span id="reglage-apercu"></span></div>
+          <div class="actions gauche">
+            <button class="bouton principal" id="accueil-enregistrer" type="button">Enregistrer</button>
+          </div>
+        </div>
+
+        <!-- Questions -->
+        <div class="section-reglage">
+          <h2>Questions du quiz <span class="compteur" id="compte-questions"></span></h2>
+          <div class="avis cache" id="avis-questions"></div>
+          <div id="liste-questions"></div>
+          <div class="actions gauche">
+            <button class="bouton discret" id="questions-ajouter" type="button">+ Ajouter une question</button>
+            <button class="bouton principal" id="questions-enregistrer" type="button">Enregistrer les questions</button>
+          </div>
+        </div>
+
+        <!-- Roue -->
+        <div class="section-reglage">
+          <h2>Roue de la fortune</h2>
+          <div class="avis cache" id="avis-roue"></div>
+          <div class="avis info" id="rappel-illimite"></div>
+          <div id="liste-lots"></div>
+          <div class="actions gauche">
+            <button class="bouton discret" id="lots-ajouter" type="button">+ Ajouter un choix</button>
+            <button class="bouton discret" id="lots-reinitialiser" type="button">Réinitialiser les quantités</button>
+            <button class="bouton principal" id="roue-enregistrer" type="button">Enregistrer la roue</button>
+          </div>
+        </div>
+
+        <!-- Formulaire -->
+        <div class="section-reglage">
+          <h2>Formulaire de captation</h2>
+          <div class="avis cache" id="avis-formulaire"></div>
+          <div class="onglets" style="margin-bottom:16px">
+            <button class="onglet actif" data-variante="reussite" type="button">Si le quiz est réussi</button>
+            <button class="onglet" data-variante="echec" type="button">Si le quiz est échoué</button>
+          </div>
+          <div class="champ">
+            <label for="reglage-intro-formulaire">Texte d'introduction</label>
+            <textarea id="reglage-intro-formulaire" rows="2"></textarea>
+          </div>
+          <div id="liste-champs"></div>
+          <div class="actions gauche">
+            <button class="bouton discret" id="champs-ajouter" type="button">+ Ajouter un champ</button>
+            <button class="bouton principal" id="formulaire-enregistrer" type="button">Enregistrer le formulaire</button>
+          </div>
+        </div>
+
+        <!-- Mot de passe -->
+        <div class="section-reglage">
+          <h2>Mot de passe administrateur</h2>
+          <div class="avis cache" id="avis-mot-de-passe"></div>
+          <div class="grille-2">
+            <div class="champ">
+              <label for="mdp-ancien">Mot de passe actuel</label>
+              <input type="password" id="mdp-ancien" autocomplete="current-password">
+            </div>
+            <div class="champ">
+              <label for="mdp-nouveau">Nouveau mot de passe</label>
+              <div class="aide">Au moins 8 caractères.</div>
+              <input type="password" id="mdp-nouveau" autocomplete="new-password">
+            </div>
+          </div>
+          <div class="champ" style="max-width:calc(50% - 7px)">
+            <label for="mdp-confirmation">Confirmer le nouveau mot de passe</label>
+            <input type="password" id="mdp-confirmation" autocomplete="new-password">
+          </div>
+          <div class="actions gauche">
+            <button class="bouton principal" id="mdp-enregistrer" type="button">Changer le mot de passe</button>
+          </div>
+        </div>
+
+        <!-- Données -->
+        <div class="section-reglage zone-dangereuse">
+          <h2>Données</h2>
+          <div class="avis cache" id="avis-donnees"></div>
+          <p class="note">
+            La configuration peut être exportée puis importée sur un autre appareil.
+            L'effacement supprime les prospects collectés, mais conserve la configuration.
+          </p>
+          <div class="actions gauche" style="margin-bottom:18px">
+            <button class="bouton discret" id="config-exporter" type="button">Exporter la configuration</button>
+            <button class="bouton discret" id="config-importer-bouton" type="button">Importer une configuration</button>
+            <input type="file" id="config-importer" accept="application/json,.json" style="display:none">
+          </div>
+          <div class="champ" style="max-width:420px">
+            <label for="mdp-suppression">Mot de passe d'autorisation pour effacer les prospects</label>
+            <input type="password" id="mdp-suppression" autocomplete="off">
+          </div>
+          <div class="actions gauche">
+            <button class="bouton danger" id="donnees-effacer" type="button">Effacer les données</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="pied">
+    <span>craaq.qc.ca</span>
+    <a id="lien-admin" href="#">Admin</a>
+  </footer>
+</div>
+
+<!-- Modale de résultat de la roue -->
+<div class="voile" id="modale-roue">
+  <div class="modale">
+    <div class="emoji" id="modale-emoji">&#127881;</div>
+    <div class="etiquette" id="modale-etiquette"></div>
+    <div class="lot" id="modale-lot"></div>
+    <button class="bouton principal" id="modale-bouton" type="button">Continuer</button>
+  </div>
+</div>
+
+<script>
+/* Configuration par défaut — PRD §4.1
+   Sert de base au premier lancement et de repli si la configuration est illisible. */
+(function (global) {
+  'use strict';
+
+  global.CONFIG_DEFAUT = {
+    version: 1,
+
+    accueil: {
+      titre: 'Testez vos connaissances!',
+      texte: 'Répondez au quiz, puis tentez votre chance à la roue de la fortune. Obtenez {seuil} ou plus de bonnes réponses pour débloquer la roue!'
+    },
+
+    quiz: {
+      seuilReussite: 50,
+      questions: [
+        {
+          id: 'q_001', ordre: 1,
+          enonce: "Depuis combien d'années le CRAAQ fait-il le pont entre la recherche et la pratique?",
+          options: [
+            { id: 'q_001_o1', texte: 'Environ 10 ans', detail: "Pas tout à fait. Le CRAAQ agit depuis plus de 25 ans.", correcte: false },
+            { id: 'q_001_o2', texte: 'Plus de 25 ans', detail: "Bonne réponse! Organisme à but non lucratif, le CRAAQ réunit et diffuse les savoirs du secteur depuis plus de 25 ans.", correcte: true },
+            { id: 'q_001_o3', texte: 'Depuis 2020', detail: "Non. Le CRAAQ existe depuis bien plus longtemps.", correcte: false }
+          ]
+        },
+        {
+          id: 'q_002', ordre: 2,
+          enonce: "Quel outil du CRAAQ aide à chiffrer un projet (budgets, coûts, rendements)?",
+          options: [
+            { id: 'q_002_o1', texte: 'La météo agricole', detail: "Non. Ce sont les références économiques qui servent à chiffrer un projet.", correcte: false },
+            { id: 'q_002_o2', texte: 'Le calendrier des foires', detail: "Non. Ce sont les références économiques qui servent à chiffrer un projet.", correcte: false },
+            { id: 'q_002_o3', texte: 'Les références économiques', detail: "Bonne réponse! Plus de 250 feuillets pour évaluer la rentabilité d'un projet.", correcte: true }
+          ]
+        },
+        {
+          id: 'q_003', ordre: 3,
+          enonce: "Combien d'outils numériques gratuits le CRAAQ met-il à disposition?",
+          options: [
+            { id: 'q_003_o1', texte: '8 outils', detail: "Bonne réponse! Huit outils gratuits pour planifier, diagnostiquer et décider.", correcte: true },
+            { id: 'q_003_o2', texte: '2 outils', detail: "Non, il y en a davantage : huit outils numériques gratuits.", correcte: false },
+            { id: 'q_003_o3', texte: 'Aucun', detail: "Non. Le CRAAQ offre huit outils numériques gratuits.", correcte: false }
+          ]
+        },
+        {
+          id: 'q_004', ordre: 4,
+          enonce: "Sur quelle plateforme trouve-t-on de l'information technique validée, gratuitement?",
+          options: [
+            { id: 'q_004_o1', texte: 'Un réseau social', detail: "Non. La plateforme de référence du milieu est Agri-Réseau.", correcte: false },
+            { id: 'q_004_o2', texte: 'Agri-Réseau', detail: "Bonne réponse! Agri-Réseau offre un accès gratuit à une information validée.", correcte: true },
+            { id: 'q_004_o3', texte: 'Nulle part', detail: "Non. Agri-Réseau donne accès gratuitement à une information validée.", correcte: false }
+          ]
+        },
+        {
+          id: 'q_005', ordre: 5,
+          enonce: "Combien d'activités le CRAAQ organise-t-il environ chaque année?",
+          options: [
+            { id: 'q_005_o1', texte: 'Environ 3', detail: "Non, bien davantage : plus de 20 activités par année.", correcte: false },
+            { id: 'q_005_o2', texte: 'Plus de 100', detail: "Non. Le CRAAQ organise plus de 20 activités par année.", correcte: false },
+            { id: 'q_005_o3', texte: 'Plus de 20', detail: "Bonne réponse! Colloques, webinaires et formations, en salle et en webdiffusion.", correcte: true }
+          ]
+        },
+        {
+          id: 'q_006', ordre: 6,
+          enonce: "Que peut-on faire dans la boutique du CRAAQ?",
+          options: [
+            { id: 'q_006_o1', texte: 'Réserver un tracteur', detail: "Non. La boutique regroupe les contenus et formations du CRAAQ.", correcte: false },
+            { id: 'q_006_o2', texte: 'Consulter et acheter publications, formations, vidéos et balados', detail: "Bonne réponse! De nouveaux contenus s'ajoutent chaque mois.", correcte: true },
+            { id: 'q_006_o3', texte: 'Vendre ses récoltes', detail: "Non. La boutique regroupe les contenus et formations du CRAAQ.", correcte: false }
+          ]
+        }
+      ]
+    },
+
+    roue: {
+      lots: [
+        { id: 'l_001', libelle: '15% de rabais',  illimite: false, quantiteInitiale: 2, quantiteRestante: 2 },
+        { id: 'l_002', libelle: '25% de rabais',  illimite: false, quantiteInitiale: 2, quantiteRestante: 2 },
+        { id: 'l_003', libelle: '5% de rabais',   illimite: false, quantiteInitiale: 1, quantiteRestante: 1 },
+        { id: 'l_004', libelle: 'Cadeau surprise', illimite: true, quantiteInitiale: null, quantiteRestante: null },
+        { id: 'l_005', libelle: 'Rejouez!',        illimite: true, quantiteInitiale: null, quantiteRestante: null }
+      ]
+    },
+
+    formulaire: {
+      reussite: {
+        intro: 'Entrez vos coordonnées pour recevoir votre prix par courriel.',
+        champs: [
+          { id: 'c_nom', type: 'texte', libelle: 'Nom', aide: '', obligatoire: true, options: [], texte: '', ordre: 1 },
+          { id: 'c_courriel', type: 'courriel', libelle: 'Courriel', aide: '', obligatoire: true, options: [], texte: '', ordre: 2 },
+          { id: 'c_profil', type: 'liste', libelle: 'Vous êtes', aide: '', obligatoire: false,
+            options: ['Producteur ou productrice', 'Conseiller ou conseillère', 'Chercheur ou chercheuse', 'Étudiant ou étudiante', 'Autre'], texte: '', ordre: 3 },
+          { id: 'c_interets', type: 'cases', libelle: "Vos centres d'intérêt", aide: 'Plusieurs choix possibles.', obligatoire: false,
+            options: ['Grandes cultures', 'Horticulture', 'Production animale', 'Gestion et économie', 'Agroenvironnement'], texte: '', ordre: 4 },
+          { id: 'c_consentement', type: 'consentement', libelle: 'Consentement', aide: '', obligatoire: true, options: [],
+            texte: "J'accepte de recevoir les communications du CRAAQ (infolettre, nouveautés) et l'envoi de mon prix par courriel. Je peux me désabonner en tout temps.", ordre: 5 }
+        ]
+      },
+      echec: {
+        intro: 'Entrez vos coordonnées pour rester informé des nouveautés du CRAAQ.',
+        champs: [
+          { id: 'e_nom', type: 'texte', libelle: 'Nom', aide: '', obligatoire: true, options: [], texte: '', ordre: 1 },
+          { id: 'e_courriel', type: 'courriel', libelle: 'Courriel', aide: '', obligatoire: true, options: [], texte: '', ordre: 2 },
+          { id: 'e_consentement', type: 'consentement', libelle: 'Consentement', aide: '', obligatoire: true, options: [],
+            texte: "J'accepte de recevoir les communications du CRAAQ (infolettre, nouveautés). Je peux me désabonner en tout temps.", ordre: 3 }
+        ]
+      }
+    },
+
+    admin: { motDePasseHash: '', motDePasseSel: '' }
+  };
+
+  /* Mot de passe initial (PRD R6.4) et mot de passe fixe d'autorisation (R6.5) */
+  global.MOT_DE_PASSE_INITIAL = 'craaq2026';
+  global.MOT_DE_PASSE_SUPPRESSION = 'suppressiondefinitive';
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Utilitaires généraux : DOM, identifiants, échappement, empreinte SHA-256.
+   PRD R6.2 et D17 : l'empreinte est calculée en JavaScript natif, sans dépendre
+   de l'API Web Crypto, indisponible lorsque la page est ouverte en « file:// ». */
+(function (global) {
+  'use strict';
+
+  var U = {};
+
+  /* ----- DOM ----- */
+  U.$ = function (sel, racine) { return (racine || document).querySelector(sel); };
+  U.$$ = function (sel, racine) { return Array.prototype.slice.call((racine || document).querySelectorAll(sel)); };
+
+  U.creer = function (balise, attributs, contenu) {
+    var el = document.createElement(balise);
+    if (attributs) {
+      Object.keys(attributs).forEach(function (cle) {
+        if (cle === 'class') el.className = attributs[cle];
+        else if (cle === 'html') el.innerHTML = attributs[cle];
+        else if (cle === 'texte') el.textContent = attributs[cle];
+        else if (cle.indexOf('on') === 0 && typeof attributs[cle] === 'function') el.addEventListener(cle.slice(2), attributs[cle]);
+        else if (attributs[cle] !== null && attributs[cle] !== undefined && attributs[cle] !== false) el.setAttribute(cle, attributs[cle]);
+      });
+    }
+    if (contenu !== undefined && contenu !== null) {
+      (Array.isArray(contenu) ? contenu : [contenu]).forEach(function (enfant) {
+        if (enfant === null || enfant === undefined) return;
+        el.appendChild(typeof enfant === 'string' ? document.createTextNode(enfant) : enfant);
+      });
+    }
+    return el;
+  };
+
+  U.vider = function (el) { while (el && el.firstChild) el.removeChild(el.firstChild); return el; };
+
+  /* ----- Texte ----- */
+  U.echapper = function (valeur) {
+    return String(valeur === null || valeur === undefined ? '' : valeur)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  };
+
+  U.normaliserCourriel = function (valeur) {
+    return String(valeur === null || valeur === undefined ? '' : valeur).trim().toLowerCase();
+  };
+
+  U.COURRIEL_MOTIF = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  U.estCourrielValide = function (valeur) {
+    return U.COURRIEL_MOTIF.test(String(valeur || '').trim());
+  };
+
+  /* ----- Identifiants ----- */
+  U.identifiant = function (prefixe) {
+    var aleatoire = Math.random().toString(36).slice(2, 8);
+    return (prefixe || 'id') + '_' + Date.now().toString(36) + aleatoire;
+  };
+
+  /* ----- Divers ----- */
+  U.melanger = function (tableau) {
+    var copie = tableau.slice();
+    for (var i = copie.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = copie[i]; copie[i] = copie[j]; copie[j] = tmp;
+    }
+    return copie;
+  };
+
+  U.copieProfonde = function (valeur) { return JSON.parse(JSON.stringify(valeur)); };
+
+  U.dateLisible = function (iso) {
+    try { return new Date(iso).toLocaleString('fr-CA'); } catch (e) { return String(iso); }
+  };
+
+  /* ----- SHA-256 (implémentation autonome) ----- */
+  var K = [
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+  ];
+
+  function rotationDroite(x, n) { return (x >>> n) | (x << (32 - n)); }
+
+  function versOctetsUtf8(texte) {
+    var octets = [], i, code;
+    for (i = 0; i < texte.length; i++) {
+      code = texte.charCodeAt(i);
+      if (code < 0x80) octets.push(code);
+      else if (code < 0x800) octets.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+      else if (code < 0xd800 || code >= 0xe000) octets.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+      else {
+        i++;
+        code = 0x10000 + (((code & 0x3ff) << 10) | (texte.charCodeAt(i) & 0x3ff));
+        octets.push(0xf0 | (code >> 18), 0x80 | ((code >> 12) & 0x3f), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+      }
+    }
+    return octets;
+  }
+
+  U.sha256 = function (texte) {
+    var h = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+    var octets = versOctetsUtf8(String(texte));
+    var longueurBits = octets.length * 8;
+
+    octets.push(0x80);
+    while (octets.length % 64 !== 56) octets.push(0);
+    for (var k = 7; k >= 0; k--) octets.push((longueurBits / Math.pow(2, k * 8)) & 0xff);
+
+    var w = new Array(64), bloc, i, t, a, b, c, d, e, f, g, hh, s0, s1, ch, maj, t1, t2;
+
+    for (bloc = 0; bloc < octets.length; bloc += 64) {
+      for (i = 0; i < 16; i++) {
+        w[i] = (octets[bloc + i * 4] << 24) | (octets[bloc + i * 4 + 1] << 16) |
+               (octets[bloc + i * 4 + 2] << 8) | octets[bloc + i * 4 + 3];
+      }
+      for (i = 16; i < 64; i++) {
+        s0 = rotationDroite(w[i - 15], 7) ^ rotationDroite(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+        s1 = rotationDroite(w[i - 2], 17) ^ rotationDroite(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      }
+      a = h[0]; b = h[1]; c = h[2]; d = h[3]; e = h[4]; f = h[5]; g = h[6]; hh = h[7];
+      for (i = 0; i < 64; i++) {
+        s1 = rotationDroite(e, 6) ^ rotationDroite(e, 11) ^ rotationDroite(e, 25);
+        ch = (e & f) ^ (~e & g);
+        t1 = (hh + s1 + ch + K[i] + w[i]) | 0;
+        s0 = rotationDroite(a, 2) ^ rotationDroite(a, 13) ^ rotationDroite(a, 22);
+        maj = (a & b) ^ (a & c) ^ (b & c);
+        t2 = (s0 + maj) | 0;
+        hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+      }
+      h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
+      h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+    }
+
+    return h.map(function (n) { return ('00000000' + (n >>> 0).toString(16)).slice(-8); }).join('');
+  };
+
+  U.selAleatoire = function () {
+    return Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
+  };
+
+  U.empreinteMotDePasse = function (motDePasse, sel) {
+    return U.sha256(String(sel || '') + '::' + String(motDePasse || ''));
+  };
+
+  global.Utils = U;
+  if (typeof module !== 'undefined' && module.exports) module.exports = U;
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Persistance — PRD §4.4
+   Stockage local du navigateur, avec repli en mémoire si indisponible. */
+(function (global) {
+  'use strict';
+
+  var CLE_CONFIG = 'craaq_qr_config_v1';
+  var CLE_PROSPECTS = 'craaq_qr_prospects_v1';
+
+  var memoire = {};
+  var localDisponible = (function () {
+    try {
+      var t = '__test__';
+      global.localStorage.setItem(t, '1');
+      global.localStorage.removeItem(t);
+      return true;
+    } catch (e) { return false; }
+  })();
+
+  function lire(cle) {
+    try {
+      var brut = localDisponible ? global.localStorage.getItem(cle) : memoire[cle];
+      return brut ? JSON.parse(brut) : null;
+    } catch (e) { return null; }
+  }
+
+  function ecrire(cle, valeur) {
+    var brut = JSON.stringify(valeur);
+    memoire[cle] = brut;
+    if (localDisponible) {
+      try { global.localStorage.setItem(cle, brut); }
+      catch (e) { return false; }
+    }
+    return true;
+  }
+
+  var S = {};
+
+  S.stockagePersistant = function () { return localDisponible; };
+
+  /* ----- Configuration ----- */
+  S.chargerConfig = function () {
+    var config = lire(CLE_CONFIG);
+    if (!config || typeof config !== 'object' || !config.quiz) {
+      config = Utils.copieProfonde(global.CONFIG_DEFAUT);
+      S.definirMotDePasse(config, global.MOT_DE_PASSE_INITIAL);
+      ecrire(CLE_CONFIG, config);
+    }
+    if (!config.admin || !config.admin.motDePasseHash) {
+      S.definirMotDePasse(config, global.MOT_DE_PASSE_INITIAL);
+      ecrire(CLE_CONFIG, config);
+    }
+    return config;
+  };
+
+  S.enregistrerConfig = function (config) { return ecrire(CLE_CONFIG, config); };
+
+  S.reinitialiserConfig = function () {
+    var config = Utils.copieProfonde(global.CONFIG_DEFAUT);
+    S.definirMotDePasse(config, global.MOT_DE_PASSE_INITIAL);
+    ecrire(CLE_CONFIG, config);
+    return config;
+  };
+
+  /* ----- Mot de passe (R6.2) ----- */
+  S.definirMotDePasse = function (config, motDePasse) {
+    var sel = Utils.selAleatoire();
+    config.admin = config.admin || {};
+    config.admin.motDePasseSel = sel;
+    config.admin.motDePasseHash = Utils.empreinteMotDePasse(motDePasse, sel);
+    return config;
+  };
+
+  S.motDePasseValide = function (config, motDePasse) {
+    if (!config || !config.admin || !config.admin.motDePasseHash) return false;
+    return Utils.empreinteMotDePasse(motDePasse, config.admin.motDePasseSel) === config.admin.motDePasseHash;
+  };
+
+  /* ----- Prospects ----- */
+  S.chargerProspects = function () {
+    var liste = lire(CLE_PROSPECTS);
+    return Array.isArray(liste) ? liste : [];
+  };
+
+  S.enregistrerProspects = function (liste) { return ecrire(CLE_PROSPECTS, liste); };
+
+  S.ajouterProspect = function (prospect) {
+    var liste = S.chargerProspects();
+    liste.push(prospect);
+    S.enregistrerProspects(liste);
+    return prospect;
+  };
+
+  /* Recherche par courriel, insensible à la casse et aux espaces (R3.7, R5.1) */
+  S.trouverProspectParCourriel = function (courriel, champsCourriel) {
+    var recherche = Utils.normaliserCourriel(courriel);
+    if (!recherche) return null;
+    var liste = S.chargerProspects();
+    for (var i = 0; i < liste.length; i++) {
+      var reponses = liste[i].reponsesFormulaire || {};
+      var cles = Object.keys(reponses);
+      for (var j = 0; j < cles.length; j++) {
+        var valeur = reponses[cles[j]];
+        if (typeof valeur === 'string' && Utils.normaliserCourriel(valeur) === recherche) {
+          if (!champsCourriel || champsCourriel.indexOf(cles[j]) !== -1 || Utils.estCourrielValide(valeur)) {
+            return liste[i];
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  S.effacerProspects = function () { return ecrire(CLE_PROSPECTS, []); };
+
+  global.Stockage = S;
+  if (typeof module !== 'undefined' && module.exports) module.exports = S;
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Règles de gestion et de validation — PRD §5
+   Chaque fonction retourne { valide: bool, erreurs: [string] }. */
+(function (global) {
+  'use strict';
+
+  var V = {};
+
+  function resultat(erreurs) { return { valide: erreurs.length === 0, erreurs: erreurs }; }
+  function vide(valeur) { return !String(valeur === null || valeur === undefined ? '' : valeur).trim(); }
+
+  /* ----- Question (R1.1 à R1.3) ----- */
+  V.validerQuestion = function (question) {
+    var e = [];
+    if (!question || typeof question !== 'object') return resultat(["La question est absente."]);
+    if (vide(question.enonce)) e.push("L'énoncé de la question est obligatoire.");
+    var options = Array.isArray(question.options) ? question.options : [];
+    if (options.length < 2) e.push("Une question doit comporter au moins 2 options de réponse.");
+    options.forEach(function (o, i) {
+      if (vide(o.texte)) e.push("Le texte de l'option " + (i + 1) + " est obligatoire.");
+    });
+    var bonnes = options.filter(function (o) { return o.correcte === true; }).length;
+    if (bonnes === 0) e.push("Vous devez désigner la bonne réponse.");
+    if (bonnes > 1) e.push("Une seule option peut être désignée comme bonne réponse (" + bonnes + " sélectionnées).");
+    return resultat(e);
+  };
+
+  /* ----- Quiz (R1.5) ----- */
+  V.validerQuiz = function (quiz) {
+    var e = [];
+    if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+      e.push("Le quiz doit comporter au moins une question.");
+      return resultat(e);
+    }
+    quiz.questions.forEach(function (q, i) {
+      var r = V.validerQuestion(q);
+      if (!r.valide) e.push("Question " + (i + 1) + " : " + r.erreurs.join(' '));
+    });
+    var s = V.validerSeuil(quiz.seuilReussite);
+    if (!s.valide) e = e.concat(s.erreurs);
+    return resultat(e);
+  };
+
+  /* ----- Seuil (R2.1) ----- */
+  V.validerSeuil = function (seuil) {
+    var e = [];
+    var n = Number(seuil);
+    if (!Number.isInteger(n) || n < 0 || n > 100) {
+      e.push("Le seuil de réussite doit être un nombre entier compris entre 0 et 100.");
+    }
+    return resultat(e);
+  };
+
+  /* ----- Roue (R4.1 à R4.3) ----- */
+  V.validerRoue = function (roue) {
+    var e = [];
+    var lots = (roue && Array.isArray(roue.lots)) ? roue.lots : [];
+    if (lots.length < 2) e.push("La roue doit comporter au moins 2 choix.");
+    lots.forEach(function (lot, i) {
+      if (vide(lot.libelle)) e.push("Le libellé du choix " + (i + 1) + " est obligatoire.");
+      if (!lot.illimite) {
+        var q = Number(lot.quantiteInitiale);
+        if (!Number.isInteger(q) || q < 1) {
+          e.push("La quantité du choix « " + (lot.libelle || (i + 1)) + " » doit être un entier d'au moins 1, ou marquée illimitée.");
+        }
+      }
+    });
+    /* Règle bloquante R4.3 */
+    var illimites = lots.filter(function (l) { return l.illimite === true; }).length;
+    if (illimites === 0) {
+      e.push("Au moins un choix doit être marqué comme illimité, sans quoi la roue pourrait n'avoir aucun lot disponible.");
+    }
+    return resultat(e);
+  };
+
+  /* ----- Champ de formulaire (R3.6) ----- */
+  V.validerChamp = function (champ) {
+    var e = [];
+    var typesConnus = ['texte', 'courriel', 'liste', 'cases', 'consentement'];
+    if (!champ || typesConnus.indexOf(champ.type) === -1) {
+      e.push("Le type du champ est invalide.");
+      return resultat(e);
+    }
+    if (vide(champ.libelle)) e.push("Le libellé du champ est obligatoire.");
+    if (champ.type === 'liste' || champ.type === 'cases') {
+      var options = Array.isArray(champ.options) ? champ.options.filter(function (o) { return !vide(o); }) : [];
+      var minimum = champ.type === 'liste' ? 2 : 1;
+      if (options.length < minimum) {
+        e.push("Le champ « " + (champ.libelle || '') + " » doit comporter au moins " + minimum + " option" + (minimum > 1 ? 's' : '') + ".");
+      }
+    }
+    if (champ.type === 'consentement' && vide(champ.texte)) {
+      e.push("Le texte de la case à cocher « " + (champ.libelle || '') + " » est obligatoire.");
+    }
+    return resultat(e);
+  };
+
+  /* ----- Variante de formulaire (R3.3) ----- */
+  V.validerVarianteFormulaire = function (variante, nom) {
+    var e = [];
+    var champs = (variante && Array.isArray(variante.champs)) ? variante.champs : [];
+    var etiquette = nom ? ' (' + nom + ')' : '';
+    if (champs.length === 0) e.push("Le formulaire" + etiquette + " doit comporter au moins un champ.");
+    champs.forEach(function (c) {
+      var r = V.validerChamp(c);
+      if (!r.valide) e = e.concat(r.erreurs.map(function (m) { return m + etiquette; }));
+    });
+    var courriels = champs.filter(function (c) { return c.type === 'courriel'; });
+    if (courriels.length !== 1) {
+      e.push("Le formulaire" + etiquette + " doit comporter exactement un champ de type courriel (actuellement : " + courriels.length + ").");
+    } else if (!courriels[0].obligatoire) {
+      e.push("Le champ courriel" + etiquette + " doit être obligatoire.");
+    }
+    return resultat(e);
+  };
+
+  V.validerFormulaire = function (formulaire) {
+    var e = [];
+    ['reussite', 'echec'].forEach(function (cle) {
+      var nom = cle === 'reussite' ? 'réussite' : 'échec';
+      var r = V.validerVarianteFormulaire(formulaire ? formulaire[cle] : null, nom);
+      if (!r.valide) e = e.concat(r.erreurs);
+    });
+    return resultat(e);
+  };
+
+  /* ----- Mot de passe (R6.3) ----- */
+  V.validerNouveauMotDePasse = function (nouveau, confirmation) {
+    var e = [];
+    if (String(nouveau || '').length < 8) e.push("Le nouveau mot de passe doit contenir au moins 8 caractères.");
+    if (nouveau !== confirmation) e.push("La confirmation ne correspond pas au nouveau mot de passe.");
+    return resultat(e);
+  };
+
+  /* ----- Réponses au formulaire visiteur (R3.1 à R3.5) ----- */
+  V.validerReponsesFormulaire = function (champs, reponses) {
+    var e = [];
+    (champs || []).forEach(function (champ) {
+      var valeur = reponses ? reponses[champ.id] : undefined;
+
+      if (champ.type === 'consentement') {
+        if (champ.obligatoire && valeur !== true) {
+          e.push({ champId: champ.id, message: "Vous devez cocher : " + (champ.texte || champ.libelle) });
+        }
+        return;
+      }
+
+      if (champ.type === 'cases') {
+        var choix = Array.isArray(valeur) ? valeur : [];
+        if (champ.obligatoire && choix.length === 0) {
+          e.push({ champId: champ.id, message: "Sélectionnez au moins une option pour « " + champ.libelle + " »." });
+        }
+        return;
+      }
+
+      var texte = String(valeur === null || valeur === undefined ? '' : valeur).trim();
+      if (champ.obligatoire && !texte) {
+        e.push({ champId: champ.id, message: "Le champ « " + champ.libelle + " » est obligatoire." });
+        return;
+      }
+      if (champ.type === 'courriel' && texte && !Utils.estCourrielValide(texte)) {
+        e.push({ champId: champ.id, message: "Le courriel saisi n'est pas valide." });
+      }
+    });
+    return { valide: e.length === 0, erreurs: e };
+  };
+
+  /* ----- Configuration complète ----- */
+  V.validerConfig = function (config) {
+    var e = [];
+    [V.validerQuiz(config.quiz), V.validerRoue(config.roue), V.validerFormulaire(config.formulaire)]
+      .forEach(function (r) { if (!r.valide) e = e.concat(r.erreurs); });
+    return resultat(e);
+  };
+
+  global.Validation = V;
+  if (typeof module !== 'undefined' && module.exports) module.exports = V;
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Roue de la fortune — PRD §5.4 (R4.1 à R4.9)
+   Gère la disponibilité des lots, le mélange, le tirage et le stock. */
+(function (global) {
+  'use strict';
+
+  var R = {};
+
+  var COULEURS = ['#2E6B3E', '#A2D95A', '#1E4A2A', '#E0A82E', '#3E8E4E', '#7DB43C'];
+  var COULEURS_TEXTE = ['#ffffff', '#1E3A16', '#ffffff', '#1E3A16', '#ffffff', '#1E3A16'];
+
+  /* R4.4 et R4.5 : un lot est disponible s'il est illimité ou s'il reste du stock */
+  R.lotDisponible = function (lot) {
+    if (!lot) return false;
+    if (lot.illimite === true) return true;
+    return Number(lot.quantiteRestante) > 0;
+  };
+
+  R.lotsDisponibles = function (config) {
+    var lots = (config && config.roue && Array.isArray(config.roue.lots)) ? config.roue.lots : [];
+    return lots.filter(R.lotDisponible);
+  };
+
+  /* R4.6 : décrémente le stock au moment du tirage */
+  R.consommerLot = function (config, lotId) {
+    var lots = config.roue.lots;
+    for (var i = 0; i < lots.length; i++) {
+      if (lots[i].id === lotId) {
+        if (lots[i].illimite !== true) {
+          lots[i].quantiteRestante = Math.max(0, Number(lots[i].quantiteRestante || 0) - 1);
+        }
+        return lots[i];
+      }
+    }
+    return null;
+  };
+
+  /* R4.7 : restitue le stock si la participation est annulée */
+  R.restituerLot = function (config, lotId) {
+    var lots = config.roue.lots;
+    for (var i = 0; i < lots.length; i++) {
+      if (lots[i].id === lotId) {
+        if (lots[i].illimite !== true) {
+          var maximum = Number(lots[i].quantiteInitiale || 0);
+          lots[i].quantiteRestante = Math.min(maximum, Number(lots[i].quantiteRestante || 0) + 1);
+        }
+        return lots[i];
+      }
+    }
+    return null;
+  };
+
+  /* R4.9 : remise à zéro des quantités */
+  R.reinitialiserQuantites = function (config) {
+    config.roue.lots.forEach(function (lot) {
+      lot.quantiteRestante = lot.illimite ? null : Number(lot.quantiteInitiale || 0);
+    });
+    return config;
+  };
+
+  R.estRejouer = function (libelle) { return /rejou/i.test(String(libelle || '')); };
+
+  /* ----- Rendu ----- */
+  function Roue(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.lots = [];
+    this.angle = 0;
+    this.enRotation = false;
+  }
+
+  /* R4.8 : la position des lots est mélangée à chaque partie */
+  Roue.prototype.preparer = function (lotsDisponibles) {
+    this.lots = Utils.melanger(lotsDisponibles);
+    this.angle = 0;
+    this.enRotation = false;
+    this.dessiner();
+    return this.lots;
+  };
+
+  Roue.prototype.dessiner = function () {
+    var ctx = this.ctx, n = this.lots.length;
+    var rayon = this.canvas.width / 2;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (n === 0) return;
+    var secteur = 2 * Math.PI / n;
+
+    for (var k = 0; k < n; k++) {
+      var debut = this.angle + k * secteur;
+      ctx.beginPath();
+      ctx.moveTo(rayon, rayon);
+      ctx.arc(rayon, rayon, rayon - 4, debut, debut + secteur);
+      ctx.closePath();
+      ctx.fillStyle = COULEURS[k % COULEURS.length];
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.55)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(rayon, rayon);
+      ctx.rotate(debut + secteur / 2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = COULEURS_TEXTE[k % COULEURS.length];
+      ctx.font = '700 ' + (n > 8 ? 18 : 22) + "px 'Segoe UI',Arial";
+      this.ecrireLibelle(this.lots[k].libelle, rayon - 28, n);
+      ctx.restore();
+    }
+    ctx.beginPath();
+    ctx.arc(rayon, rayon, rayon - 4, 0, 2 * Math.PI);
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = '#fff';
+    ctx.stroke();
+  };
+
+  Roue.prototype.ecrireLibelle = function (texte, x, n) {
+    var ctx = this.ctx;
+    var mots = String(texte).split(' ');
+    var lignes = [], courante = '';
+    mots.forEach(function (mot) {
+      if ((courante + ' ' + mot).trim().length > 14) { lignes.push(courante.trim()); courante = mot; }
+      else courante = (courante + ' ' + mot).trim();
+    });
+    if (courante) lignes.push(courante);
+    var hauteur = n > 8 ? 19 : 22;
+    var y = -(lignes.length - 1) * hauteur / 2;
+    lignes.forEach(function (ligne) { ctx.fillText(ligne, x, y + 7); y += hauteur; });
+  };
+
+  /* Tirage : choisit un lot au hasard parmi ceux affichés, puis anime jusqu'à lui */
+  Roue.prototype.tourner = function (surFin) {
+    if (this.enRotation || this.lots.length === 0) return;
+    var self = this;
+    this.enRotation = true;
+
+    var indexGagnant = Math.floor(Math.random() * this.lots.length);
+    var secteur = 2 * Math.PI / this.lots.length;
+    var cible = -Math.PI / 2 - (indexGagnant * secteur + secteur / 2);
+    var depart = this.angle;
+    var tours = 6 + Math.floor(Math.random() * 3);
+    var ecart = ((cible - depart) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    var arrivee = depart + tours * 2 * Math.PI + ecart;
+    var duree = 4200, debut = performance.now();
+
+    function image(maintenant) {
+      var avancement = Math.min(1, (maintenant - debut) / duree);
+      var attenuation = 1 - Math.pow(1 - avancement, 3);
+      self.angle = depart + (arrivee - depart) * attenuation;
+      self.dessiner();
+      if (avancement < 1) requestAnimationFrame(image);
+      else { self.enRotation = false; surFin(self.lots[indexGagnant]); }
+    }
+    requestAnimationFrame(image);
+  };
+
+  R.Roue = Roue;
+
+  global.RoueFortune = R;
+  if (typeof module !== 'undefined' && module.exports) module.exports = R;
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Formulaire de captation dynamique — PRD §5.3 (R3.1 à R3.7) */
+(function (global) {
+  'use strict';
+
+  var F = {};
+
+  F.champsTries = function (variante) {
+    var champs = (variante && Array.isArray(variante.champs)) ? variante.champs.slice() : [];
+    return champs.sort(function (a, b) { return (a.ordre || 0) - (b.ordre || 0); });
+  };
+
+  F.champCourriel = function (variante) {
+    return F.champsTries(variante).filter(function (c) { return c.type === 'courriel'; })[0] || null;
+  };
+
+  /* Construit le formulaire dans le conteneur indiqué */
+  F.rendre = function (conteneur, variante) {
+    Utils.vider(conteneur);
+    F.champsTries(variante).forEach(function (champ) {
+      conteneur.appendChild(F.rendreChamp(champ));
+    });
+  };
+
+  F.rendreChamp = function (champ) {
+    var bloc = Utils.creer('div', { class: 'champ', 'data-champ': champ.id });
+    var idSaisie = 'saisie_' + champ.id;
+
+    function libelle(pour) {
+      var l = Utils.creer('label', pour ? { for: pour } : { class: 'libelle' }, champ.libelle);
+      if (champ.obligatoire) l.appendChild(Utils.creer('span', { class: 'obligatoire' }, '*'));
+      return l;
+    }
+    function aide() {
+      return champ.aide ? Utils.creer('div', { class: 'aide' }, champ.aide) : null;
+    }
+
+    if (champ.type === 'texte' || champ.type === 'courriel') {
+      bloc.appendChild(libelle(idSaisie));
+      var a = aide(); if (a) bloc.appendChild(a);
+      bloc.appendChild(Utils.creer('input', {
+        type: champ.type === 'courriel' ? 'email' : 'text',
+        id: idSaisie,
+        inputmode: champ.type === 'courriel' ? 'email' : null,
+        autocomplete: champ.type === 'courriel' ? 'email' : null,
+        placeholder: champ.type === 'courriel' ? 'vous@exemple.ca' : ''
+      }));
+
+    } else if (champ.type === 'liste') {
+      bloc.appendChild(libelle(idSaisie));
+      var a2 = aide(); if (a2) bloc.appendChild(a2);
+      var select = Utils.creer('select', { id: idSaisie });
+      select.appendChild(Utils.creer('option', { value: '' }, 'Choisissez…'));
+      (champ.options || []).forEach(function (option) {
+        select.appendChild(Utils.creer('option', { value: option }, option));
+      });
+      bloc.appendChild(select);
+
+    } else if (champ.type === 'cases') {
+      bloc.appendChild(libelle(null));
+      var a3 = aide(); if (a3) bloc.appendChild(a3);
+      var groupe = Utils.creer('div', { class: 'case-groupe' });
+      (champ.options || []).forEach(function (option, i) {
+        var idCase = idSaisie + '_' + i;
+        var ligne = Utils.creer('div', { class: 'case-ligne' });
+        ligne.appendChild(Utils.creer('input', { type: 'checkbox', id: idCase, value: option }));
+        ligne.appendChild(Utils.creer('label', { for: idCase }, option));
+        groupe.appendChild(ligne);
+      });
+      bloc.appendChild(groupe);
+
+    } else if (champ.type === 'consentement') {
+      var zone = Utils.creer('div', { class: 'consentement' });
+      zone.appendChild(Utils.creer('input', { type: 'checkbox', id: idSaisie }));
+      var etiquette = Utils.creer('label', { for: idSaisie });
+      if (champ.obligatoire) {
+        etiquette.appendChild(Utils.creer('strong', null, 'Obligatoire : '));
+      }
+      etiquette.appendChild(document.createTextNode(champ.texte || champ.libelle));
+      zone.appendChild(etiquette);
+      bloc.appendChild(zone);
+    }
+
+    return bloc;
+  };
+
+  /* Lit les valeurs saisies */
+  F.lireReponses = function (conteneur, variante) {
+    var reponses = {};
+    F.champsTries(variante).forEach(function (champ) {
+      var bloc = conteneur.querySelector('[data-champ="' + champ.id + '"]');
+      if (!bloc) return;
+      if (champ.type === 'cases') {
+        reponses[champ.id] = Utils.$$('input[type=checkbox]', bloc)
+          .filter(function (c) { return c.checked; })
+          .map(function (c) { return c.value; });
+      } else if (champ.type === 'consentement') {
+        var caseUnique = bloc.querySelector('input[type=checkbox]');
+        reponses[champ.id] = !!(caseUnique && caseUnique.checked);
+      } else {
+        var saisie = bloc.querySelector('input, select');
+        reponses[champ.id] = saisie ? String(saisie.value).trim() : '';
+      }
+    });
+    return reponses;
+  };
+
+  /* Affiche les erreurs sous les champs concernés */
+  F.afficherErreurs = function (conteneur, erreurs) {
+    Utils.$$('.champ', conteneur).forEach(function (bloc) {
+      bloc.classList.remove('en-erreur');
+      var ancien = bloc.querySelector('.message-erreur');
+      if (ancien) ancien.remove();
+    });
+    (erreurs || []).forEach(function (erreur) {
+      var bloc = conteneur.querySelector('[data-champ="' + erreur.champId + '"]');
+      if (!bloc) return;
+      bloc.classList.add('en-erreur');
+      bloc.appendChild(Utils.creer('div', { class: 'message-erreur' }, erreur.message));
+    });
+    var premier = conteneur.querySelector('.champ.en-erreur');
+    if (premier && premier.scrollIntoView) premier.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  /* Valeur du courriel saisi, pour le contrôle d'unicité */
+  F.lireCourriel = function (reponses, variante) {
+    var champ = F.champCourriel(variante);
+    return champ ? String(reponses[champ.id] || '') : '';
+  };
+
+  global.Formulaire = F;
+  if (typeof module !== 'undefined' && module.exports) module.exports = F;
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Orchestration du parcours visiteur — PRD §2.2
+   Accueil > Quiz > Résultat > Roue (si réussite) > Captation > Confirmation */
+(function (global) {
+  'use strict';
+
+  var App = {};
+  var config = null;
+  var roue = null;
+
+  var etat = {
+    index: 0,
+    score: 0,
+    reponses: [],
+    aRepondu: false,
+    variante: 'echec',
+    lotGagne: null,
+    lotConsomme: null
+  };
+
+  var ECRANS = ['accueil', 'quiz', 'resultat', 'roue', 'captation', 'confirmation', 'admin-connexion', 'admin'];
+
+  App.config = function () { return config; };
+  App.rechargerConfig = function () { config = Stockage.chargerConfig(); return config; };
+
+  App.afficherEcran = function (nom) {
+    ECRANS.forEach(function (e) {
+      var el = document.getElementById('ecran-' + e);
+      if (el) el.classList.toggle('cache', e !== nom);
+    });
+    var carte = Utils.$('.carte');
+    if (carte) carte.classList.toggle('large', nom === 'admin');
+    if (global.scrollTo) global.scrollTo(0, 0);
+  };
+
+  /* ----- Accueil (R2.4 : le seuil est injecté, jamais codé en dur) ----- */
+  App.rendreAccueil = function () {
+    var seuil = Number(config.quiz.seuilReussite);
+    Utils.$('#accueil-titre').textContent = config.accueil.titre || '';
+    Utils.$('#accueil-texte').textContent = String(config.accueil.texte || '').replace(/\{seuil\}/g, seuil + '%');
+    App.afficherEcran('accueil');
+  };
+
+  /* ----- Quiz ----- */
+  App.questionsTriees = function () {
+    return config.quiz.questions.slice().sort(function (a, b) { return (a.ordre || 0) - (b.ordre || 0); });
+  };
+
+  App.demarrer = function () {
+    var verif = Validation.validerQuiz(config.quiz);
+    if (!verif.valide) {
+      alert("Le quiz n'est pas configuré correctement :\n\n" + verif.erreurs.join('\n'));
+      return;
+    }
+    etat = { index: 0, score: 0, reponses: [], aRepondu: false, variante: 'echec', lotGagne: null, lotConsomme: null };
+    App.afficherEcran('quiz');
+    App.rendreQuestion();
+  };
+
+  App.rendreQuestion = function () {
+    var questions = App.questionsTriees();
+    var question = questions[etat.index];
+    etat.aRepondu = false;
+
+    Utils.$('#quiz-numero').textContent = 'Question ' + (etat.index + 1) + ' sur ' + questions.length;
+    Utils.$('#quiz-score').textContent = 'Score : ' + etat.score;
+    Utils.$('#quiz-barre').style.width = (etat.index / questions.length * 100) + '%';
+    Utils.$('#quiz-question').textContent = question.enonce;
+    Utils.vider(Utils.$('#quiz-detail')).classList.add('cache');
+    Utils.$('#quiz-suivant-zone').classList.add('cache');
+    Utils.$('#quiz-suivant').textContent =
+      (etat.index === questions.length - 1) ? 'Voir mon résultat' : 'Question suivante';
+
+    var lettres = ['A', 'B', 'C', 'D', 'E', 'F'];
+    var conteneur = Utils.vider(Utils.$('#quiz-options'));
+    question.options.forEach(function (option, i) {
+      var bouton = Utils.creer('button', { class: 'option', type: 'button' }, [
+        Utils.creer('span', { class: 'lettre' }, lettres[i] || String(i + 1)),
+        Utils.creer('span', null, option.texte)
+      ]);
+      bouton.addEventListener('click', function () { App.repondre(i, bouton); });
+      conteneur.appendChild(bouton);
+    });
+  };
+
+  /* R1.4 : le détail affiché est celui de l'option choisie */
+  App.repondre = function (indexChoisi, bouton) {
+    if (etat.aRepondu) return;
+    etat.aRepondu = true;
+
+    var question = App.questionsTriees()[etat.index];
+    var choisie = question.options[indexChoisi];
+    var bonne = question.options.filter(function (o) { return o.correcte; })[0];
+    var estBonne = choisie.correcte === true;
+
+    Utils.$$('#quiz-options .option').forEach(function (b, i) {
+      b.disabled = true;
+      if (question.options[i].correcte) b.classList.add('bonne');
+    });
+    if (!estBonne) bouton.classList.add('mauvaise');
+
+    if (estBonne) etat.score++;
+    Utils.$('#quiz-score').textContent = 'Score : ' + etat.score;
+
+    etat.reponses.push({
+      questionId: question.id,
+      enonce: question.enonce,
+      optionChoisie: choisie.texte,
+      bonneReponse: bonne ? bonne.texte : '',
+      correcte: estBonne
+    });
+
+    var detail = Utils.$('#quiz-detail');
+    if (choisie.detail && String(choisie.detail).trim()) {
+      Utils.vider(detail);
+      detail.className = 'detail' + (estBonne ? '' : ' echoue');
+      detail.appendChild(Utils.creer('strong', null, estBonne ? 'Bonne réponse! ' : 'Ce n’est pas la bonne réponse. '));
+      detail.appendChild(document.createTextNode(choisie.detail));
+      detail.classList.remove('cache');
+    } else {
+      detail.classList.add('cache');
+    }
+    Utils.$('#quiz-suivant-zone').classList.remove('cache');
+  };
+
+  App.questionSuivante = function () {
+    etat.index++;
+    if (etat.index >= App.questionsTriees().length) App.rendreResultat();
+    else App.rendreQuestion();
+  };
+
+  /* ----- Résultat (R2.2, R2.3) ----- */
+  App.pourcentage = function () {
+    var total = App.questionsTriees().length;
+    return total === 0 ? 0 : Math.round(etat.score / total * 100);
+  };
+
+  App.rendreResultat = function () {
+    var total = App.questionsTriees().length;
+    var pourcentage = App.pourcentage();
+    var seuil = Number(config.quiz.seuilReussite);
+    var reussi = pourcentage >= seuil;
+    etat.variante = reussi ? 'reussite' : 'echec';
+
+    Utils.$('#resultat-score').textContent = etat.score + ' / ' + total;
+    Utils.$('#resultat-pourcentage').textContent = pourcentage + '% de bonnes réponses';
+    Utils.$('#resultat-message').textContent = reussi
+      ? 'Bravo! Vous avez débloqué la roue de la fortune.'
+      : 'Il vous fallait ' + seuil + '% pour débloquer la roue. Merci d’avoir joué!';
+    Utils.$('#resultat-suite').textContent = reussi ? 'Tourner la roue' : 'Continuer';
+    App.afficherEcran('resultat');
+  };
+
+  App.apresResultat = function () {
+    if (etat.variante === 'reussite') App.rendreRoue();
+    else App.rendreCaptation();
+  };
+
+  /* ----- Roue ----- */
+  App.rendreRoue = function () {
+    var disponibles = RoueFortune.lotsDisponibles(config);
+    if (disponibles.length === 0) {
+      /* Impossible en pratique grâce à R4.3, mais on ne bloque jamais le visiteur. */
+      App.rendreCaptation();
+      return;
+    }
+    App.afficherEcran('roue');
+    if (!roue) roue = new RoueFortune.Roue(Utils.$('#roue-canvas'));
+    roue.preparer(disponibles);
+    Utils.$('#roue-tourner').disabled = false;
+  };
+
+  App.tournerRoue = function () {
+    Utils.$('#roue-tourner').disabled = true;
+    roue.tourner(function (lot) { App.resultatRoue(lot); });
+  };
+
+  App.resultatRoue = function (lot) {
+    var estRejouer = RoueFortune.estRejouer(lot.libelle);
+    Utils.$('#modale-emoji').textContent = estRejouer ? '🔄' : '🎉';
+    Utils.$('#modale-etiquette').textContent = estRejouer ? 'OH!' : 'VOUS AVEZ GAGNÉ :';
+    Utils.$('#modale-lot').textContent = lot.libelle;
+
+    var bouton = Utils.$('#modale-bouton');
+    var nouveau = bouton.cloneNode(true);
+    bouton.parentNode.replaceChild(nouveau, bouton);
+
+    if (estRejouer) {
+      nouveau.textContent = 'Tourner à nouveau';
+      nouveau.addEventListener('click', function () {
+        Utils.$('#modale-roue').classList.remove('visible');
+        roue.preparer(RoueFortune.lotsDisponibles(config));
+        Utils.$('#roue-tourner').disabled = false;
+      });
+    } else {
+      nouveau.textContent = 'Continuer';
+      nouveau.addEventListener('click', function () {
+        Utils.$('#modale-roue').classList.remove('visible');
+        /* R4.6 : le stock est consommé au tirage */
+        RoueFortune.consommerLot(config, lot.id);
+        Stockage.enregistrerConfig(config);
+        etat.lotGagne = { id: lot.id, libelle: lot.libelle };
+        etat.lotConsomme = lot.id;
+        App.rendreCaptation();
+      });
+    }
+    Utils.$('#modale-roue').classList.add('visible');
+  };
+
+  /* ----- Captation ----- */
+  App.varianteCourante = function () { return config.formulaire[etat.variante]; };
+
+  App.rendreCaptation = function () {
+    var variante = App.varianteCourante();
+    Utils.$('#captation-intro').textContent = variante.intro || '';
+    var zoneLot = Utils.$('#captation-lot');
+    if (etat.lotGagne) {
+      Utils.vider(zoneLot);
+      zoneLot.className = 'avis succes';
+      zoneLot.appendChild(Utils.creer('strong', null, 'Votre prix : '));
+      zoneLot.appendChild(document.createTextNode(etat.lotGagne.libelle));
+      zoneLot.classList.remove('cache');
+    } else {
+      zoneLot.classList.add('cache');
+    }
+    Utils.$('#captation-avis').classList.add('cache');
+    Formulaire.rendre(Utils.$('#captation-champs'), variante);
+    App.afficherEcran('captation');
+  };
+
+  App.soumettreCaptation = function () {
+    var variante = App.varianteCourante();
+    var conteneur = Utils.$('#captation-champs');
+    var reponses = Formulaire.lireReponses(conteneur, variante);
+
+    var verif = Validation.validerReponsesFormulaire(Formulaire.champsTries(variante), reponses);
+    if (!verif.valide) { Formulaire.afficherErreurs(conteneur, verif.erreurs); return; }
+    Formulaire.afficherErreurs(conteneur, []);
+
+    /* R5.1 et R5.2 : unicité par courriel */
+    var courriel = Formulaire.lireCourriel(reponses, variante);
+    var existant = Stockage.trouverProspectParCourriel(courriel);
+    if (existant) {
+      /* R4.7 : la participation est refusée, le stock est restitué */
+      if (etat.lotConsomme) {
+        RoueFortune.restituerLot(config, etat.lotConsomme);
+        Stockage.enregistrerConfig(config);
+        etat.lotConsomme = null;
+        etat.lotGagne = null;
+      }
+      var avis = Utils.$('#captation-avis');
+      Utils.vider(avis);
+      avis.className = 'avis attention';
+      avis.appendChild(Utils.creer('strong', null, 'Vous avez déjà participé. '));
+      avis.appendChild(document.createTextNode(
+        'Une participation par personne est permise. Votre participation du ' +
+        Utils.dateLisible(existant.horodatage) +
+        (existant.lot && existant.lot.libelle ? ' vous a valu : ' + existant.lot.libelle + '.' : '.')
+      ));
+      avis.classList.remove('cache');
+      Utils.$('#captation-lot').classList.add('cache');
+      Utils.$('#captation-valider').textContent = 'Terminer';
+      Utils.$('#captation-valider').onclick = App.terminer;
+      return;
+    }
+
+    var prospect = {
+      id: Utils.identifiant('p'),
+      horodatage: new Date().toISOString(),
+      variante: etat.variante,
+      reponsesFormulaire: reponses,
+      quiz: {
+        score: etat.score,
+        total: App.questionsTriees().length,
+        pourcentage: App.pourcentage(),
+        reussi: etat.variante === 'reussite',
+        reponses: etat.reponses.slice()
+      },
+      lot: etat.lotGagne
+    };
+    Stockage.ajouterProspect(prospect);
+    App.rendreConfirmation();
+  };
+
+  /* ----- Confirmation ----- */
+  App.rendreConfirmation = function () {
+    var titre = Utils.$('#confirmation-titre');
+    var message = Utils.$('#confirmation-message');
+    if (etat.lotGagne) {
+      titre.textContent = 'Félicitations!';
+      Utils.vider(message);
+      message.appendChild(document.createTextNode('Vous avez gagné : '));
+      message.appendChild(Utils.creer('strong', null, etat.lotGagne.libelle));
+      message.appendChild(Utils.creer('br'));
+      message.appendChild(document.createTextNode(
+        'Vous recevrez votre prix par courriel d’ici demain, à l’adresse que vous nous avez fournie. Merci de votre participation!'));
+    } else {
+      titre.textContent = 'Merci de votre participation!';
+      message.textContent = 'Vos coordonnées sont bien enregistrées. Au plaisir de vous retrouver parmi nos abonnés.';
+    }
+    App.afficherEcran('confirmation');
+  };
+
+  App.terminer = function () {
+    etat = { index: 0, score: 0, reponses: [], aRepondu: false, variante: 'echec', lotGagne: null, lotConsomme: null };
+    Utils.$('#captation-valider').textContent = 'Valider';
+    Utils.$('#captation-valider').onclick = App.soumettreCaptation;
+    App.rendreAccueil();
+  };
+
+  /* ----- Initialisation ----- */
+  App.initialiser = function () {
+    config = Stockage.chargerConfig();
+
+    Utils.$('#accueil-commencer').addEventListener('click', App.demarrer);
+    Utils.$('#quiz-suivant').addEventListener('click', App.questionSuivante);
+    Utils.$('#resultat-suite').addEventListener('click', App.apresResultat);
+    Utils.$('#roue-tourner').addEventListener('click', App.tournerRoue);
+    Utils.$('#captation-valider').onclick = App.soumettreCaptation;
+    Utils.$('#confirmation-terminer').addEventListener('click', App.terminer);
+    Utils.$('#lien-admin').addEventListener('click', function (e) { e.preventDefault(); Admin.ouvrirConnexion(); });
+
+    if (!Stockage.stockagePersistant()) {
+      console.warn('Stockage local indisponible : les données ne seront conservées que le temps de la session.');
+    }
+    App.rendreAccueil();
+  };
+
+  global.App = App;
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Administration — PRD §3.2 : onglets « Prospects » et « Réglages » */
+(function (global) {
+  'use strict';
+
+  var Admin = {};
+  var brouillon = null;      /* copie de travail de la configuration */
+  var ongletActif = 'prospects';
+
+  function config() { return App.config(); }
+  function cloner() { brouillon = Utils.copieProfonde(config()); return brouillon; }
+
+  /* ================= CONNEXION (R6.1) ================= */
+  Admin.ouvrirConnexion = function () {
+    Utils.$('#admin-mot-de-passe').value = '';
+    Utils.$('#admin-erreur-connexion').classList.add('cache');
+    App.afficherEcran('admin-connexion');
+    setTimeout(function () { Utils.$('#admin-mot-de-passe').focus(); }, 60);
+  };
+
+  Admin.tenterConnexion = function () {
+    var saisie = Utils.$('#admin-mot-de-passe').value;
+    if (!Stockage.motDePasseValide(config(), saisie)) {
+      Utils.$('#admin-erreur-connexion').textContent = 'Mot de passe incorrect.';
+      Utils.$('#admin-erreur-connexion').classList.remove('cache');
+      return;
+    }
+    Utils.$('#admin-mot-de-passe').value = '';
+    Admin.ouvrir();
+  };
+
+  Admin.ouvrir = function () {
+    cloner();
+    App.afficherEcran('admin');
+    Admin.activerOnglet('prospects');
+  };
+
+  Admin.fermer = function () { brouillon = null; App.terminer(); };
+
+  Admin.activerOnglet = function (nom) {
+    ongletActif = nom;
+    Utils.$$('.onglet').forEach(function (o) { o.classList.toggle('actif', o.dataset.onglet === nom); });
+    Utils.$('#panneau-prospects').classList.toggle('cache', nom !== 'prospects');
+    Utils.$('#panneau-reglages').classList.toggle('cache', nom !== 'reglages');
+    if (nom === 'prospects') Admin.rendreProspects();
+    else Admin.rendreReglages();
+  };
+
+  /* ================= ONGLET PROSPECTS ================= */
+  /* F3.2 : les colonnes reflètent les champs configurés */
+  function colonnesFormulaire() {
+    var vus = {}, colonnes = [];
+    ['reussite', 'echec'].forEach(function (variante) {
+      Formulaire.champsTries(config().formulaire[variante]).forEach(function (champ) {
+        if (!vus[champ.id]) { vus[champ.id] = true; colonnes.push({ id: champ.id, libelle: champ.libelle, type: champ.type }); }
+      });
+    });
+    return colonnes;
+  }
+
+  function valeurLisible(valeur, type) {
+    if (type === 'consentement') return valeur === true ? 'oui' : 'non';
+    if (Array.isArray(valeur)) return valeur.join(', ');
+    return valeur === null || valeur === undefined ? '' : String(valeur);
+  }
+
+  Admin.rendreProspects = function () {
+    var prospects = Stockage.chargerProspects();
+    var colonnes = colonnesFormulaire();
+    Utils.$('#prospects-compte').textContent =
+      prospects.length === 0 ? 'Aucun prospect enregistré pour le moment.'
+        : prospects.length + ' prospect' + (prospects.length > 1 ? 's' : '') + ' enregistré' + (prospects.length > 1 ? 's' : '') + '.';
+
+    var table = Utils.vider(Utils.$('#prospects-table'));
+    var entete = Utils.creer('tr');
+    ['#', 'Date'].forEach(function (t) { entete.appendChild(Utils.creer('th', null, t)); });
+    colonnes.forEach(function (c) { entete.appendChild(Utils.creer('th', null, c.libelle)); });
+    ['Score', 'Lot gagné', 'Réponses au quiz'].forEach(function (t) { entete.appendChild(Utils.creer('th', null, t)); });
+    table.appendChild(entete);
+
+    prospects.slice().reverse().forEach(function (p, i) {
+      var ligne = Utils.creer('tr');
+      ligne.appendChild(Utils.creer('td', null, String(prospects.length - i)));
+      ligne.appendChild(Utils.creer('td', null, Utils.dateLisible(p.horodatage)));
+
+      colonnes.forEach(function (c) {
+        var valeur = p.reponsesFormulaire ? p.reponsesFormulaire[c.id] : undefined;
+        var cellule = Utils.creer('td');
+        if (c.type === 'consentement') {
+          var oui = valeur === true;
+          cellule.appendChild(Utils.creer('span', { class: 'pastille ' + (oui ? 'oui' : 'non') }, oui ? 'Oui' : 'Non'));
+        } else {
+          cellule.textContent = valeurLisible(valeur, c.type);
+        }
+        ligne.appendChild(cellule);
+      });
+
+      var q = p.quiz || {};
+      ligne.appendChild(Utils.creer('td', null, (q.score || 0) + '/' + (q.total || 0) + ' (' + (q.pourcentage || 0) + '%)'));
+      var celluleLot = Utils.creer('td');
+      if (p.lot && p.lot.libelle) celluleLot.textContent = p.lot.libelle;
+      else celluleLot.appendChild(Utils.creer('span', { class: 'pastille neutre' }, 'Aucun'));
+      ligne.appendChild(celluleLot);
+
+      var detail = Utils.creer('td');
+      (q.reponses || []).forEach(function (r, k) {
+        detail.appendChild(document.createTextNode('Q' + (k + 1) + ' : ' + r.optionChoisie + (r.correcte ? ' ✓' : ' ✗')));
+        detail.appendChild(Utils.creer('br'));
+      });
+      ligne.appendChild(detail);
+      table.appendChild(ligne);
+    });
+  };
+
+  /* F3.4 : export CSV compatible Excel */
+  Admin.exporterCSV = function () {
+    var prospects = Stockage.chargerProspects();
+    if (prospects.length === 0) { alert('Aucun prospect à exporter.'); return; }
+    var colonnes = colonnesFormulaire();
+    var lignes = [['Date'].concat(colonnes.map(function (c) { return c.libelle; }))
+      .concat(['Score', 'Total', 'Pourcentage', 'Réussi', 'Lot gagné', 'Réponses au quiz'])];
+
+    prospects.forEach(function (p) {
+      var q = p.quiz || {};
+      var ligne = [Utils.dateLisible(p.horodatage)];
+      colonnes.forEach(function (c) {
+        ligne.push(valeurLisible(p.reponsesFormulaire ? p.reponsesFormulaire[c.id] : '', c.type));
+      });
+      ligne.push(q.score || 0, q.total || 0, (q.pourcentage || 0) + '%', q.reussi ? 'oui' : 'non',
+        (p.lot && p.lot.libelle) || '',
+        (q.reponses || []).map(function (r, k) { return 'Q' + (k + 1) + ' : ' + r.optionChoisie + (r.correcte ? ' (bonne)' : ' (mauvaise)'); }).join(' | '));
+      lignes.push(ligne);
+    });
+
+    var csv = '﻿' + lignes.map(function (ligne) {
+      return ligne.map(function (cellule) { return '"' + String(cellule).replace(/"/g, '""') + '"'; }).join(';');
+    }).join('\r\n');
+
+    telecharger(csv, 'text/csv;charset=utf-8', 'prospects_CRAAQ_' + new Date().toISOString().slice(0, 10) + '.csv');
+  };
+
+  function telecharger(contenu, type, nomFichier) {
+    var lien = Utils.creer('a', { href: URL.createObjectURL(new Blob([contenu], { type: type })), download: nomFichier });
+    document.body.appendChild(lien); lien.click();
+    setTimeout(function () { URL.revokeObjectURL(lien.href); lien.remove(); }, 400);
+  }
+
+  /* ================= ONGLET RÉGLAGES ================= */
+  function avis(conteneur, type, titre, messages) {
+    Utils.vider(conteneur);
+    conteneur.className = 'avis ' + type;
+    if (titre) conteneur.appendChild(Utils.creer('strong', null, titre + ' '));
+    if (messages && messages.length) {
+      var liste = Utils.creer('ul');
+      messages.forEach(function (m) { liste.appendChild(Utils.creer('li', null, m)); });
+      conteneur.appendChild(liste);
+    }
+    conteneur.classList.remove('cache');
+    setTimeout(function () { if (type === 'succes') conteneur.classList.add('cache'); }, 4000);
+  }
+
+  /* Enregistrement section par section.
+     On repart de la dernière configuration enregistrée (donc valide) et on n'y applique
+     que la section concernée. Ainsi, un brouillon incomplet dans une autre section
+     n'empêche pas d'enregistrer celle-ci, et n'est jamais écrit par erreur.
+     Le brouillon n'est pas recloné : les éditeurs restent liés aux mêmes objets. */
+  function enregistrerSection(appliquer, verifSection, conteneurAvis, etiquette) {
+    if (verifSection && !verifSection.valide) {
+      avis(conteneurAvis, 'erreur', 'Enregistrement refusé :', verifSection.erreurs);
+      return false;
+    }
+    var candidate = Utils.copieProfonde(App.config());
+    appliquer(candidate);
+    var verif = Validation.validerConfig(candidate);
+    if (!verif.valide) { avis(conteneurAvis, 'erreur', 'Enregistrement refusé :', verif.erreurs); return false; }
+    Stockage.enregistrerConfig(candidate);
+    App.rechargerConfig();
+    avis(conteneurAvis, 'succes', (etiquette || 'Modifications enregistrées.'), []);
+    return true;
+  }
+
+  Admin.rendreReglages = function () {
+    if (!brouillon) cloner();
+    Admin.rendreAccueilReglage();
+    Admin.rendreQuestions();
+    Admin.rendreRoueReglage();
+    Admin.rendreFormulaireReglage();
+  };
+
+  /* ----- Texte d'accueil et seuil ----- */
+  Admin.rendreAccueilReglage = function () {
+    Utils.$('#reglage-titre').value = brouillon.accueil.titre || '';
+    Utils.$('#reglage-texte').value = brouillon.accueil.texte || '';
+    Utils.$('#reglage-seuil').value = brouillon.quiz.seuilReussite;
+    Admin.rafraichirApercuAccueil();
+  };
+
+  Admin.rafraichirApercuAccueil = function () {
+    var seuil = Number(Utils.$('#reglage-seuil').value);
+    var texte = Utils.$('#reglage-texte').value || '';
+    Utils.$('#reglage-apercu').textContent = texte.replace(/\{seuil\}/g, (isNaN(seuil) ? 0 : seuil) + '%');
+  };
+
+  Admin.enregistrerAccueil = function () {
+    brouillon.accueil.titre = Utils.$('#reglage-titre').value.trim();
+    brouillon.accueil.texte = Utils.$('#reglage-texte').value.trim();
+    var seuil = parseInt(Utils.$('#reglage-seuil').value, 10);
+    var verifSeuil = Validation.validerSeuil(seuil);
+    if (!verifSeuil.valide) { avis(Utils.$('#avis-accueil'), 'erreur', 'Enregistrement refusé :', verifSeuil.erreurs); return; }
+    brouillon.quiz.seuilReussite = seuil;
+    enregistrerSection(function (candidate) {
+      candidate.accueil = Utils.copieProfonde(brouillon.accueil);
+      candidate.quiz.seuilReussite = brouillon.quiz.seuilReussite;
+    }, null, Utils.$('#avis-accueil'), 'Texte d’accueil et seuil enregistrés.');
+  };
+
+  /* ----- Questions (F4.1, F4.2) ----- */
+  Admin.rendreQuestions = function () {
+    var conteneur = Utils.vider(Utils.$('#liste-questions'));
+    var questions = brouillon.quiz.questions;
+    Utils.$('#compte-questions').textContent = questions.length + ' question' + (questions.length > 1 ? 's' : '');
+
+    questions.forEach(function (question, index) {
+      var bloc = Utils.creer('div', { class: 'element-liste' });
+
+      var barre = Utils.creer('div', { class: 'barre-titre' });
+      barre.appendChild(Utils.creer('span', { class: 'nom' }, 'Question ' + (index + 1)));
+      var outils = Utils.creer('div', { class: 'outils' });
+      outils.appendChild(bouton('↑ Monter', function () { deplacerQuestion(index, -1); }, index === 0));
+      outils.appendChild(bouton('↓ Descendre', function () { deplacerQuestion(index, 1); }, index === questions.length - 1));
+      outils.appendChild(bouton('Supprimer', function () { supprimerQuestion(index); }, false, true));
+      barre.appendChild(outils);
+      bloc.appendChild(barre);
+
+      var champEnonce = Utils.creer('div', { class: 'champ' });
+      champEnonce.appendChild(Utils.creer('label', null, 'Énoncé de la question'));
+      var saisieEnonce = Utils.creer('textarea', { rows: 2 });
+      saisieEnonce.value = question.enonce || '';
+      saisieEnonce.addEventListener('input', function () { question.enonce = saisieEnonce.value; });
+      champEnonce.appendChild(saisieEnonce);
+      bloc.appendChild(champEnonce);
+
+      bloc.appendChild(Utils.creer('div', { class: 'note' },
+        'Cochez le cercle de la bonne réponse. Le détail de chaque option s’affiche au visiteur après son choix.'));
+
+      var zoneOptions = Utils.creer('div');
+      question.options.forEach(function (option, io) {
+        zoneOptions.appendChild(rendreOption(question, option, io, index));
+      });
+      bloc.appendChild(zoneOptions);
+
+      bloc.appendChild(Utils.creer('div', { class: 'actions gauche' }, [
+        bouton('+ Ajouter une option', function () {
+          question.options.push({ id: Utils.identifiant('o'), texte: '', detail: '', correcte: false });
+          Admin.rendreQuestions();
+        })
+      ]));
+
+      conteneur.appendChild(bloc);
+    });
+  };
+
+  function rendreOption(question, option, indexOption, indexQuestion) {
+    var ligne = Utils.creer('div', { class: 'ligne-option' });
+
+    var zoneRadio = Utils.creer('div', { class: 'radio' });
+    var radio = Utils.creer('input', {
+      type: 'radio', name: 'bonne_' + question.id, title: 'Désigner comme bonne réponse'
+    });
+    radio.checked = option.correcte === true;
+    radio.addEventListener('change', function () {
+      /* R1.2 : une seule bonne réponse */
+      question.options.forEach(function (o) { o.correcte = false; });
+      option.correcte = true;
+    });
+    zoneRadio.appendChild(radio);
+    ligne.appendChild(zoneRadio);
+
+    var champs = Utils.creer('div', { class: 'champs' });
+    var saisieTexte = Utils.creer('input', { type: 'text', placeholder: 'Texte de l’option ' + (indexOption + 1) });
+    saisieTexte.value = option.texte || '';
+    saisieTexte.addEventListener('input', function () { option.texte = saisieTexte.value; });
+    champs.appendChild(saisieTexte);
+
+    var saisieDetail = Utils.creer('textarea', { rows: 2, placeholder: 'Détail affiché si cette option est choisie (facultatif)' });
+    saisieDetail.value = option.detail || '';
+    saisieDetail.addEventListener('input', function () { option.detail = saisieDetail.value; });
+    champs.appendChild(saisieDetail);
+    ligne.appendChild(champs);
+
+    ligne.appendChild(bouton('✕', function () {
+      if (question.options.length <= 2) { alert('Une question doit conserver au moins 2 options.'); return; }
+      question.options.splice(indexOption, 1);
+      Admin.rendreQuestions();
+    }, false, true));
+
+    return ligne;
+  }
+
+  function bouton(texte, action, desactive, rouge) {
+    var b = Utils.creer('button', { class: 'icone-bouton' + (rouge ? ' rouge' : ''), type: 'button' }, texte);
+    if (desactive) b.disabled = true; else b.addEventListener('click', action);
+    return b;
+  }
+
+  function deplacerQuestion(index, sens) {
+    var q = brouillon.quiz.questions;
+    var cible = index + sens;
+    if (cible < 0 || cible >= q.length) return;
+    var tmp = q[index]; q[index] = q[cible]; q[cible] = tmp;
+    q.forEach(function (question, i) { question.ordre = i + 1; });
+    Admin.rendreQuestions();
+  }
+
+  function supprimerQuestion(index) {
+    if (brouillon.quiz.questions.length <= 1) { alert('Le quiz doit conserver au moins une question.'); return; }
+    if (!confirm('Supprimer définitivement cette question?')) return;
+    brouillon.quiz.questions.splice(index, 1);
+    brouillon.quiz.questions.forEach(function (q, i) { q.ordre = i + 1; });
+    Admin.rendreQuestions();
+  }
+
+  Admin.ajouterQuestion = function () {
+    brouillon.quiz.questions.push({
+      id: Utils.identifiant('q'),
+      ordre: brouillon.quiz.questions.length + 1,
+      enonce: '',
+      options: [
+        { id: Utils.identifiant('o'), texte: '', detail: '', correcte: true },
+        { id: Utils.identifiant('o'), texte: '', detail: '', correcte: false }
+      ]
+    });
+    Admin.rendreQuestions();
+  };
+
+  Admin.enregistrerQuestions = function () {
+    brouillon.quiz.questions.forEach(function (q, i) { q.ordre = i + 1; });
+    enregistrerSection(function (candidate) {
+      candidate.quiz.questions = Utils.copieProfonde(brouillon.quiz.questions);
+    }, Validation.validerQuiz({ questions: brouillon.quiz.questions, seuilReussite: brouillon.quiz.seuilReussite }),
+      Utils.$('#avis-questions'), 'Questions enregistrées.');
+    Admin.rendreQuestions();
+  };
+
+  /* ----- Roue (F4.4) ----- */
+  Admin.rendreRoueReglage = function () {
+    var conteneur = Utils.vider(Utils.$('#liste-lots'));
+    brouillon.roue.lots.forEach(function (lot, index) {
+      var bloc = Utils.creer('div', { class: 'element-liste' });
+      var barre = Utils.creer('div', { class: 'barre-titre' });
+      barre.appendChild(Utils.creer('span', { class: 'nom' }, 'Choix ' + (index + 1)));
+      var outils = Utils.creer('div', { class: 'outils' });
+      outils.appendChild(bouton('↑', function () { deplacerLot(index, -1); }, index === 0));
+      outils.appendChild(bouton('↓', function () { deplacerLot(index, 1); }, index === brouillon.roue.lots.length - 1));
+      outils.appendChild(bouton('Supprimer', function () {
+        if (brouillon.roue.lots.length <= 2) { alert('La roue doit conserver au moins 2 choix.'); return; }
+        if (!confirm('Supprimer ce choix de la roue?')) return;
+        brouillon.roue.lots.splice(index, 1);
+        Admin.rendreRoueReglage();
+      }, false, true));
+      barre.appendChild(outils);
+      bloc.appendChild(barre);
+
+      var grille = Utils.creer('div', { class: 'grille-2' });
+
+      var champLibelle = Utils.creer('div', { class: 'champ' });
+      champLibelle.appendChild(Utils.creer('label', null, 'Libellé du lot'));
+      var saisieLibelle = Utils.creer('input', { type: 'text', placeholder: 'Ex. 25% de rabais' });
+      saisieLibelle.value = lot.libelle || '';
+      saisieLibelle.addEventListener('input', function () { lot.libelle = saisieLibelle.value; });
+      champLibelle.appendChild(saisieLibelle);
+      grille.appendChild(champLibelle);
+
+      var champQuantite = Utils.creer('div', { class: 'champ' });
+      champQuantite.appendChild(Utils.creer('label', null, 'Quantité à faire gagner'));
+      var ligneQuantite = Utils.creer('div', { class: 'case-groupe' });
+
+      var saisieQuantite = Utils.creer('input', { type: 'number', min: '1', step: '1' });
+      saisieQuantite.value = lot.illimite ? '' : (lot.quantiteInitiale || 1);
+      saisieQuantite.disabled = lot.illimite === true;
+      saisieQuantite.addEventListener('input', function () {
+        var valeur = parseInt(saisieQuantite.value, 10);
+        lot.quantiteInitiale = isNaN(valeur) ? 1 : valeur;
+        lot.quantiteRestante = lot.quantiteInitiale;
+      });
+      ligneQuantite.appendChild(saisieQuantite);
+
+      var ligneIllimite = Utils.creer('div', { class: 'case-ligne' });
+      var idIllimite = 'illimite_' + lot.id;
+      var caseIllimite = Utils.creer('input', { type: 'checkbox', id: idIllimite });
+      caseIllimite.checked = lot.illimite === true;
+      caseIllimite.addEventListener('change', function () {
+        lot.illimite = caseIllimite.checked;
+        if (lot.illimite) { lot.quantiteInitiale = null; lot.quantiteRestante = null; }
+        else { lot.quantiteInitiale = 1; lot.quantiteRestante = 1; }
+        Admin.rendreRoueReglage();
+      });
+      ligneIllimite.appendChild(caseIllimite);
+      ligneIllimite.appendChild(Utils.creer('label', { for: idIllimite }, 'Illimité'));
+      ligneQuantite.appendChild(ligneIllimite);
+
+      if (!lot.illimite) {
+        ligneQuantite.appendChild(Utils.creer('div', { class: 'compteur' },
+          'Restant : ' + (lot.quantiteRestante === null || lot.quantiteRestante === undefined ? '—' : lot.quantiteRestante)));
+      }
+      champQuantite.appendChild(ligneQuantite);
+      grille.appendChild(champQuantite);
+
+      bloc.appendChild(grille);
+      conteneur.appendChild(bloc);
+    });
+
+    var illimites = brouillon.roue.lots.filter(function (l) { return l.illimite; }).length;
+    var rappel = Utils.$('#rappel-illimite');
+    if (illimites === 0) {
+      rappel.className = 'avis erreur';
+      rappel.textContent = 'Au moins un choix doit être marqué comme illimité, sans quoi l’enregistrement sera refusé.';
+    } else {
+      rappel.className = 'avis info';
+      rappel.textContent = illimites + ' choix illimité' + (illimites > 1 ? 's' : '') + ' : la roue restera toujours jouable.';
+    }
+  };
+
+  function deplacerLot(index, sens) {
+    var lots = brouillon.roue.lots;
+    var cible = index + sens;
+    if (cible < 0 || cible >= lots.length) return;
+    var tmp = lots[index]; lots[index] = lots[cible]; lots[cible] = tmp;
+    Admin.rendreRoueReglage();
+  }
+
+  /* R4.2 : quantité par défaut à 1 */
+  Admin.ajouterLot = function () {
+    brouillon.roue.lots.push({
+      id: Utils.identifiant('l'), libelle: '', illimite: false, quantiteInitiale: 1, quantiteRestante: 1
+    });
+    Admin.rendreRoueReglage();
+  };
+
+  Admin.enregistrerRoue = function () {
+    enregistrerSection(function (candidate) {
+      candidate.roue = Utils.copieProfonde(brouillon.roue);
+    }, Validation.validerRoue(brouillon.roue), Utils.$('#avis-roue'), 'Roue enregistrée.');
+    Admin.rendreRoueReglage();
+  };
+
+  Admin.reinitialiserQuantites = function () {
+    if (!confirm('Remettre toutes les quantités restantes à leur valeur initiale?')) return;
+    RoueFortune.reinitialiserQuantites(brouillon);
+    enregistrerSection(function (candidate) {
+      candidate.roue = Utils.copieProfonde(brouillon.roue);
+    }, Validation.validerRoue(brouillon.roue), Utils.$('#avis-roue'), 'Quantités réinitialisées.');
+    Admin.rendreRoueReglage();
+  };
+
+  /* ----- Formulaire (F4.5) ----- */
+  var varianteEditee = 'reussite';
+
+  Admin.changerVariante = function (nom) {
+    varianteEditee = nom;
+    Utils.$$('[data-variante]').forEach(function (b) { b.classList.toggle('actif', b.dataset.variante === nom); });
+    Admin.rendreFormulaireReglage();
+  };
+
+  Admin.rendreFormulaireReglage = function () {
+    var variante = brouillon.formulaire[varianteEditee];
+    Utils.$$('[data-variante]').forEach(function (b) { b.classList.toggle('actif', b.dataset.variante === varianteEditee); });
+
+    var saisieIntro = Utils.$('#reglage-intro-formulaire');
+    saisieIntro.value = variante.intro || '';
+    saisieIntro.oninput = function () { variante.intro = saisieIntro.value; };
+
+    var conteneur = Utils.vider(Utils.$('#liste-champs'));
+    var champs = Formulaire.champsTries(variante);
+    variante.champs = champs;
+
+    champs.forEach(function (champ, index) {
+      var bloc = Utils.creer('div', { class: 'element-liste' });
+      var barre = Utils.creer('div', { class: 'barre-titre' });
+      barre.appendChild(Utils.creer('span', { class: 'nom' }, (champ.libelle || 'Champ') + ' — ' + etiquetteType(champ.type)));
+      var outils = Utils.creer('div', { class: 'outils' });
+      outils.appendChild(bouton('↑', function () { deplacerChamp(variante, index, -1); }, index === 0));
+      outils.appendChild(bouton('↓', function () { deplacerChamp(variante, index, 1); }, index === champs.length - 1));
+      outils.appendChild(bouton('Supprimer', function () {
+        if (champ.type === 'courriel') { alert('Le champ courriel est requis : il sert à identifier le participant et à envoyer le prix.'); return; }
+        if (!confirm('Supprimer ce champ?')) return;
+        variante.champs.splice(index, 1);
+        Admin.rendreFormulaireReglage();
+      }, false, true));
+      barre.appendChild(outils);
+      bloc.appendChild(barre);
+
+      var grille = Utils.creer('div', { class: 'grille-2' });
+
+      var champLibelle = Utils.creer('div', { class: 'champ' });
+      champLibelle.appendChild(Utils.creer('label', null, 'Libellé'));
+      var saisieLibelle = Utils.creer('input', { type: 'text' });
+      saisieLibelle.value = champ.libelle || '';
+      saisieLibelle.addEventListener('input', function () { champ.libelle = saisieLibelle.value; });
+      champLibelle.appendChild(saisieLibelle);
+      grille.appendChild(champLibelle);
+
+      var champType = Utils.creer('div', { class: 'champ' });
+      champType.appendChild(Utils.creer('label', null, 'Type de champ'));
+      var selectType = Utils.creer('select');
+      [['texte', 'Texte simple'], ['courriel', 'Courriel'], ['liste', 'Liste déroulante'],
+       ['cases', 'Cases à cocher (choix multiples)'], ['consentement', 'Case à cocher avec texte']]
+        .forEach(function (paire) {
+          var option = Utils.creer('option', { value: paire[0] }, paire[1]);
+          if (champ.type === paire[0]) option.selected = true;
+          selectType.appendChild(option);
+        });
+      selectType.disabled = (champ.type === 'courriel');
+      selectType.addEventListener('change', function () {
+        champ.type = selectType.value;
+        if ((champ.type === 'liste' || champ.type === 'cases') && (!champ.options || champ.options.length === 0)) {
+          champ.options = ['Option 1', 'Option 2'];
+        }
+        Admin.rendreFormulaireReglage();
+      });
+      champType.appendChild(selectType);
+      grille.appendChild(champType);
+      bloc.appendChild(grille);
+
+      var ligneObligatoire = Utils.creer('div', { class: 'case-ligne' });
+      var idObligatoire = 'obl_' + champ.id;
+      var caseObligatoire = Utils.creer('input', { type: 'checkbox', id: idObligatoire });
+      caseObligatoire.checked = champ.obligatoire === true;
+      caseObligatoire.disabled = (champ.type === 'courriel');
+      caseObligatoire.addEventListener('change', function () { champ.obligatoire = caseObligatoire.checked; });
+      ligneObligatoire.appendChild(caseObligatoire);
+      ligneObligatoire.appendChild(Utils.creer('label', { for: idObligatoire },
+        champ.type === 'courriel' ? 'Obligatoire (imposé pour le courriel)' : 'Champ obligatoire'));
+      bloc.appendChild(ligneObligatoire);
+
+      if (champ.type === 'consentement') {
+        var champTexte = Utils.creer('div', { class: 'champ' });
+        champTexte.appendChild(Utils.creer('label', null, 'Texte affiché à côté de la case'));
+        var saisieTexte = Utils.creer('textarea', { rows: 3 });
+        saisieTexte.value = champ.texte || '';
+        saisieTexte.addEventListener('input', function () { champ.texte = saisieTexte.value; });
+        champTexte.appendChild(saisieTexte);
+        bloc.appendChild(champTexte);
+      }
+
+      if (champ.type === 'liste' || champ.type === 'cases') {
+        var champOptions = Utils.creer('div', { class: 'champ' });
+        champOptions.appendChild(Utils.creer('label', null, 'Options (une par ligne)'));
+        var saisieOptions = Utils.creer('textarea', { rows: 4 });
+        saisieOptions.value = (champ.options || []).join('\n');
+        saisieOptions.addEventListener('input', function () {
+          champ.options = saisieOptions.value.split('\n').map(function (o) { return o.trim(); }).filter(Boolean);
+        });
+        champOptions.appendChild(saisieOptions);
+        bloc.appendChild(champOptions);
+      }
+
+      conteneur.appendChild(bloc);
+    });
+  };
+
+  function etiquetteType(type) {
+    return { texte: 'texte simple', courriel: 'courriel', liste: 'liste déroulante',
+      cases: 'cases à cocher', consentement: 'case avec texte' }[type] || type;
+  }
+
+  function deplacerChamp(variante, index, sens) {
+    var cible = index + sens;
+    if (cible < 0 || cible >= variante.champs.length) return;
+    var tmp = variante.champs[index]; variante.champs[index] = variante.champs[cible]; variante.champs[cible] = tmp;
+    variante.champs.forEach(function (c, i) { c.ordre = i + 1; });
+    Admin.rendreFormulaireReglage();
+  }
+
+  Admin.ajouterChamp = function () {
+    var variante = brouillon.formulaire[varianteEditee];
+    variante.champs.push({
+      id: Utils.identifiant('c'), type: 'texte', libelle: 'Nouveau champ', aide: '',
+      obligatoire: false, options: [], texte: '', ordre: variante.champs.length + 1
+    });
+    Admin.rendreFormulaireReglage();
+  };
+
+  Admin.enregistrerFormulaire = function () {
+    var variante = brouillon.formulaire[varianteEditee];
+    variante.champs.forEach(function (c, i) { c.ordre = i + 1; });
+    enregistrerSection(function (candidate) {
+      candidate.formulaire = Utils.copieProfonde(brouillon.formulaire);
+    }, Validation.validerFormulaire(brouillon.formulaire), Utils.$('#avis-formulaire'), 'Formulaire enregistré.');
+    Admin.rendreFormulaireReglage();
+  };
+
+  /* ----- Mot de passe (F4.7, R6.3) ----- */
+  Admin.changerMotDePasse = function () {
+    var ancien = Utils.$('#mdp-ancien').value;
+    var nouveau = Utils.$('#mdp-nouveau').value;
+    var confirmation = Utils.$('#mdp-confirmation').value;
+    var zone = Utils.$('#avis-mot-de-passe');
+
+    if (!Stockage.motDePasseValide(config(), ancien)) {
+      avis(zone, 'erreur', 'Changement refusé :', ['L’ancien mot de passe est incorrect.']); return;
+    }
+    var verif = Validation.validerNouveauMotDePasse(nouveau, confirmation);
+    if (!verif.valide) { avis(zone, 'erreur', 'Changement refusé :', verif.erreurs); return; }
+
+    var courant = App.config();
+    Stockage.definirMotDePasse(courant, nouveau);
+    Stockage.enregistrerConfig(courant);
+    App.rechargerConfig();
+    Utils.$('#mdp-ancien').value = ''; Utils.$('#mdp-nouveau').value = ''; Utils.$('#mdp-confirmation').value = '';
+    avis(zone, 'succes', 'Mot de passe modifié. Il sera exigé à la prochaine connexion.', []);
+  };
+
+  /* ----- Export et import de la configuration (F4.9) ----- */
+  Admin.exporterConfig = function () {
+    var copie = Utils.copieProfonde(config());
+    delete copie.admin;
+    telecharger(JSON.stringify(copie, null, 2), 'application/json',
+      'configuration_CRAAQ_' + new Date().toISOString().slice(0, 10) + '.json');
+  };
+
+  Admin.importerConfig = function (fichier) {
+    var zone = Utils.$('#avis-donnees');
+    var lecteur = new FileReader();
+    lecteur.onload = function () {
+      var importee;
+      try { importee = JSON.parse(lecteur.result); }
+      catch (e) { avis(zone, 'erreur', 'Import refusé :', ['Le fichier n’est pas un fichier de configuration valide.']); return; }
+      var candidate = Utils.copieProfonde(config());
+      ['accueil', 'quiz', 'roue', 'formulaire'].forEach(function (cle) {
+        if (importee[cle]) candidate[cle] = importee[cle];
+      });
+      var verif = Validation.validerConfig(candidate);
+      if (!verif.valide) { avis(zone, 'erreur', 'Import refusé :', verif.erreurs); return; }
+      Stockage.enregistrerConfig(candidate);
+      App.rechargerConfig();
+      cloner();
+      Admin.rendreReglages();
+      avis(zone, 'succes', 'Configuration importée.', []);
+    };
+    lecteur.readAsText(fichier);
+  };
+
+  /* ----- Effacement des données (F4.8, R6.5, R6.6) ----- */
+  Admin.effacerDonnees = function () {
+    var zone = Utils.$('#avis-donnees');
+    var saisie = Utils.$('#mdp-suppression').value;
+    if (saisie !== global.MOT_DE_PASSE_SUPPRESSION) {
+      avis(zone, 'erreur', 'Effacement refusé :', ['Le mot de passe d’autorisation est incorrect.']);
+      return;
+    }
+    var nombre = Stockage.chargerProspects().length;
+    if (!confirm('Effacer définitivement ' + nombre + ' prospect(s)? Cette action est irréversible.')) return;
+    Stockage.effacerProspects();
+    Utils.$('#mdp-suppression').value = '';
+    avis(zone, 'succes', 'Données effacées. La configuration est conservée.', []);
+    Admin.rendreProspects();
+  };
+
+  global.Admin = Admin;
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Liaisons des contrôles de l'interface et démarrage de l'application. */
+(function () {
+  'use strict';
+
+  function lier(id, evenement, action) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener(evenement, action);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    App.initialiser();
+
+    /* Connexion */
+    lier('admin-connexion-valider', 'click', Admin.tenterConnexion);
+    lier('admin-connexion-retour', 'click', function () { App.rendreAccueil(); });
+    lier('admin-mot-de-passe', 'keydown', function (e) { if (e.key === 'Enter') Admin.tenterConnexion(); });
+
+    /* Onglets */
+    Utils.$$('.onglet[data-onglet]').forEach(function (onglet) {
+      onglet.addEventListener('click', function () { Admin.activerOnglet(onglet.dataset.onglet); });
+    });
+    lier('admin-quitter', 'click', Admin.fermer);
+
+    /* Prospects */
+    lier('prospects-exporter', 'click', Admin.exporterCSV);
+    lier('prospects-rafraichir', 'click', Admin.rendreProspects);
+
+    /* Accueil et seuil */
+    lier('accueil-enregistrer', 'click', Admin.enregistrerAccueil);
+    lier('reglage-texte', 'input', Admin.rafraichirApercuAccueil);
+    lier('reglage-seuil', 'input', Admin.rafraichirApercuAccueil);
+
+    /* Questions */
+    lier('questions-ajouter', 'click', Admin.ajouterQuestion);
+    lier('questions-enregistrer', 'click', Admin.enregistrerQuestions);
+
+    /* Roue */
+    lier('lots-ajouter', 'click', Admin.ajouterLot);
+    lier('lots-reinitialiser', 'click', Admin.reinitialiserQuantites);
+    lier('roue-enregistrer', 'click', Admin.enregistrerRoue);
+
+    /* Formulaire */
+    Utils.$$('[data-variante]').forEach(function (bouton) {
+      bouton.addEventListener('click', function () { Admin.changerVariante(bouton.dataset.variante); });
+    });
+    lier('champs-ajouter', 'click', Admin.ajouterChamp);
+    lier('formulaire-enregistrer', 'click', Admin.enregistrerFormulaire);
+
+    /* Mot de passe */
+    lier('mdp-enregistrer', 'click', Admin.changerMotDePasse);
+
+    /* Données */
+    lier('config-exporter', 'click', Admin.exporterConfig);
+    lier('config-importer-bouton', 'click', function () { document.getElementById('config-importer').click(); });
+    lier('config-importer', 'change', function (e) {
+      if (e.target.files && e.target.files[0]) Admin.importerConfig(e.target.files[0]);
+      e.target.value = '';
+    });
+    lier('donnees-effacer', 'click', Admin.effacerDonnees);
+  });
+})();
+
+</script>
+</body>
+</html>
