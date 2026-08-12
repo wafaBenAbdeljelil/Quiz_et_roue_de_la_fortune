@@ -173,26 +173,32 @@ h3{font-size:16px;color:var(--vert-fonce);margin:0 0 8px}
 .section-reglage{background:#fff;border:1px solid var(--creme-bordure);border-radius:var(--rayon);padding:20px 22px;margin-bottom:18px}
 .section-reglage>h2{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 
-/* Réglages : navigation latérale */
-.reglages-disposition{display:flex;gap:20px;align-items:flex-start}
-.reglages-nav{
+/* Navigation latérale des panneaux d'administration (réglages et prospects) */
+.panneau-disposition{display:flex;gap:20px;align-items:flex-start}
+.panneau-nav{
   flex:0 0 224px;display:flex;flex-direction:column;gap:6px;position:sticky;top:18px;
   background:#fff;border:1px solid var(--creme-bordure);border-radius:var(--rayon);padding:10px;
 }
-.reglages-nav-item{
+.panneau-nav-item{
   font:inherit;font-weight:700;font-size:14.5px;text-align:left;padding:11px 14px;
   border:none;border-left:4px solid transparent;border-radius:10px;background:none;
   color:var(--gris);cursor:pointer;transition:.15s;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
 }
-.reglages-nav-item:hover{background:#EEF3E6;color:var(--vert-fonce)}
-.reglages-nav-item.actif{background:var(--vert);color:#fff;border-left-color:var(--lime)}
-.reglages-contenu{flex:1;min-width:0}
-.reglages-contenu .section-reglage{margin-bottom:0}
+.panneau-nav-item:hover{background:#EEF3E6;color:var(--vert-fonce)}
+.panneau-nav-item.actif{background:var(--vert);color:#fff;border-left-color:var(--lime)}
+.nav-compte{
+  flex:0 0 auto;min-width:24px;text-align:center;padding:1px 8px;border-radius:20px;
+  background:#EEF3E6;color:var(--vert-fonce);font-size:12px;font-weight:800;
+}
+.panneau-nav-item.actif .nav-compte{background:rgba(255,255,255,.22);color:#fff}
+.panneau-contenu{flex:1;min-width:0}
+.panneau-contenu .section-reglage{margin-bottom:0}
 
 @media(max-width:760px){
-  .reglages-disposition{flex-direction:column}
-  .reglages-nav{position:static;flex:none;width:100%;flex-direction:row;overflow-x:auto;padding:8px}
-  .reglages-nav-item{flex:0 0 auto;white-space:nowrap;border-left:none}
+  .panneau-disposition{flex-direction:column}
+  .panneau-nav{position:static;flex:none;width:100%;flex-direction:row;overflow-x:auto;padding:8px}
+  .panneau-nav-item{flex:0 0 auto;white-space:nowrap;border-left:none}
 }
 .zone-dangereuse{border-color:#E8C4BA;background:#FDF6F4}
 .zone-dangereuse h2{color:var(--erreur)}
@@ -354,29 +360,61 @@ tr:nth-child(even) td{background:#F7FAF1}
 
       <!-- ---------- Panneau Prospects ---------- -->
       <div id="panneau-prospects">
-        <h2>Prospects collectés</h2>
-        <p class="note" id="prospects-compte" style="margin-bottom:14px"></p>
-        <div class="tableau-defilant"><table id="prospects-table"></table></div>
-        <div class="actions gauche">
-          <button class="bouton accent" id="prospects-exporter" type="button">Exporter en CSV (Excel)</button>
-          <button class="bouton discret" id="prospects-rafraichir" type="button">Rafraîchir</button>
+       <div class="panneau-disposition">
+
+        <nav class="panneau-nav" aria-label="Sections des prospects">
+          <button class="panneau-nav-item actif" data-section-prospect="gagnes" type="button">
+            <span>Quiz réussis</span><span class="nav-compte" id="nav-compte-gagnes">0</span>
+          </button>
+          <button class="panneau-nav-item" data-section-prospect="echoues" type="button">
+            <span>Quiz échoués</span><span class="nav-compte" id="nav-compte-echoues">0</span>
+          </button>
+        </nav>
+
+        <div class="panneau-contenu">
+
+          <!-- Prospects ayant réussi le quiz -->
+          <div class="section-reglage" data-section-prospect="gagnes">
+            <h2>Prospects — quiz réussis</h2>
+            <p class="note" id="prospects-compte-gagnes" style="margin-bottom:14px"></p>
+            <div class="tableau-defilant"><table id="prospects-table-gagnes"></table></div>
+            <div class="actions gauche">
+              <button class="bouton accent" id="prospects-exporter-gagnes" type="button">Exporter en CSV (Excel)</button>
+              <button class="bouton discret" id="prospects-exporter" type="button">Exporter tout</button>
+              <button class="bouton discret" id="prospects-rafraichir" type="button">Rafraîchir</button>
+            </div>
+          </div>
+
+          <!-- Prospects ayant échoué le quiz -->
+          <div class="section-reglage cache" data-section-prospect="echoues">
+            <h2>Prospects — quiz échoués</h2>
+            <p class="note" id="prospects-compte-echoues" style="margin-bottom:14px"></p>
+            <div class="tableau-defilant"><table id="prospects-table-echoues"></table></div>
+            <div class="actions gauche">
+              <button class="bouton accent" id="prospects-exporter-echoues" type="button">Exporter en CSV (Excel)</button>
+              <button class="bouton discret" id="prospects-exporter-2" type="button">Exporter tout</button>
+              <button class="bouton discret" id="prospects-rafraichir-2" type="button">Rafraîchir</button>
+            </div>
+          </div>
+
         </div>
+       </div>
       </div>
 
       <!-- ---------- Panneau Réglages ---------- -->
       <div id="panneau-reglages" class="cache">
-       <div class="reglages-disposition">
+       <div class="panneau-disposition">
 
-        <nav class="reglages-nav" aria-label="Sections des réglages">
-          <button class="reglages-nav-item actif" data-section-reglage="accueil" type="button">Texte d'accueil et seuil</button>
-          <button class="reglages-nav-item" data-section-reglage="questions" type="button">Questions du quiz</button>
-          <button class="reglages-nav-item" data-section-reglage="roue" type="button">Roue de la fortune</button>
-          <button class="reglages-nav-item" data-section-reglage="formulaire" type="button">Formulaire de captation</button>
-          <button class="reglages-nav-item" data-section-reglage="motdepasse" type="button">Mot de passe</button>
-          <button class="reglages-nav-item" data-section-reglage="donnees" type="button">Données</button>
+        <nav class="panneau-nav" aria-label="Sections des réglages">
+          <button class="panneau-nav-item actif" data-section-reglage="accueil" type="button">Texte d'accueil et seuil</button>
+          <button class="panneau-nav-item" data-section-reglage="questions" type="button">Questions du quiz</button>
+          <button class="panneau-nav-item" data-section-reglage="roue" type="button">Roue de la fortune</button>
+          <button class="panneau-nav-item" data-section-reglage="formulaire" type="button">Formulaire de captation</button>
+          <button class="panneau-nav-item" data-section-reglage="motdepasse" type="button">Mot de passe</button>
+          <button class="panneau-nav-item" data-section-reglage="donnees" type="button">Données</button>
         </nav>
 
-        <div class="reglages-contenu">
+        <div class="panneau-contenu">
 
         <!-- Accueil et seuil -->
         <div class="section-reglage" data-section-reglage="accueil">
@@ -902,6 +940,35 @@ tr:nth-child(even) td{background:#F7FAF1}
   };
 
   S.effacerProspects = function () { return ecrire(CLE_PROSPECTS, []); };
+
+  /* Une réponse a-t-elle réellement été saisie pour ce champ? */
+  function reponseRenseignee(valeur) {
+    if (valeur === undefined || valeur === null) return false;
+    if (typeof valeur === 'string') return valeur.trim() !== '';
+    if (Array.isArray(valeur)) return valeur.length > 0;
+    return true;   /* booléen ou nombre : une réponse a bel et bien été enregistrée */
+  }
+
+  /* Nombre de prospects portant une réponse pour ce champ (avertissement avant suppression) */
+  S.compterProspectsAvecChamp = function (idChamp) {
+    return S.chargerProspects().filter(function (p) {
+      return reponseRenseignee((p.reponsesFormulaire || {})[idChamp]);
+    }).length;
+  };
+
+  /* Supprime définitivement les réponses de ce seul champ; le reste du prospect est intact */
+  S.supprimerChampProspects = function (idChamp) {
+    var liste = S.chargerProspects();
+    var touches = 0;
+    liste.forEach(function (p) {
+      if (p.reponsesFormulaire && Object.prototype.hasOwnProperty.call(p.reponsesFormulaire, idChamp)) {
+        delete p.reponsesFormulaire[idChamp];
+        touches++;
+      }
+    });
+    if (touches > 0) S.enregistrerProspects(liste);
+    return touches;
+  };
 
   global.Stockage = S;
   if (typeof module !== 'undefined' && module.exports) module.exports = S;
@@ -1731,9 +1798,15 @@ tr:nth-child(even) td{background:#F7FAF1}
   var brouillon = null;      /* copie de travail de la configuration */
   var ongletActif = 'prospects';
   var sectionReglageActive = 'accueil';
+  var sectionProspectActive = 'gagnes';
 
   function config() { return App.config(); }
-  function cloner() { brouillon = Utils.copieProfonde(config()); return brouillon; }
+  /* Un nouveau brouillon annule les suppressions de champs qui n'ont jamais été enregistrées */
+  function cloner() {
+    brouillon = Utils.copieProfonde(config());
+    suppressionsEnAttente = {};
+    return brouillon;
+  }
 
   /* ================= CONNEXION (R6.1) ================= */
   Admin.ouvrirConnexion = function () {
@@ -1757,6 +1830,7 @@ tr:nth-child(even) td{background:#F7FAF1}
   Admin.ouvrir = function () {
     cloner();
     sectionReglageActive = 'accueil';
+    sectionProspectActive = 'gagnes';
     App.afficherEcran('admin');
     Admin.activerOnglet('prospects');
   };
@@ -1773,40 +1847,79 @@ tr:nth-child(even) td{background:#F7FAF1}
   };
 
   /* ================= ONGLET PROSPECTS ================= */
-  /* F3.2 : les colonnes reflètent les champs configurés */
-  function colonnesFormulaire() {
-    var vus = {}, colonnes = [];
-    ['reussite', 'echec'].forEach(function (variante) {
-      Formulaire.champsTries(config().formulaire[variante]).forEach(function (champ) {
-        if (!vus[champ.id]) { vus[champ.id] = true; colonnes.push({ id: champ.id, libelle: champ.libelle, type: champ.type }); }
+  /* F3.2 : chaque tableau ne montre que les champs configurés pour sa propre variante,
+     jamais ceux qui n'appartiennent qu'à l'autre. */
+  function colonnesVariante(nom) {
+    return Formulaire.champsTries(config().formulaire[nom]).map(function (champ) {
+      return { id: champ.id, libelle: champ.libelle, type: champ.type };
+    });
+  }
+
+  /* Export global : union des deux variantes, pour ne rien perdre à l'exportation.
+     Les deux variantes ayant souvent des champs de même libellé (« Nom », « Courriel »),
+     on précise la provenance dès qu'un libellé apparaît des deux côtés. */
+  function colonnesToutes() {
+    var vus = {}, colonnes = [], compteLibelles = {};
+    ['reussite', 'echec'].forEach(function (nom) {
+      colonnesVariante(nom).forEach(function (c) {
+        if (vus[c.id]) return;
+        vus[c.id] = true;
+        compteLibelles[c.libelle] = (compteLibelles[c.libelle] || 0) + 1;
+        colonnes.push({ id: c.id, libelle: c.libelle, type: c.type, variante: nom });
       });
     });
-    return colonnes;
+    return colonnes.map(function (c) {
+      if (compteLibelles[c.libelle] < 2) return c;
+      return { id: c.id, type: c.type,
+        libelle: c.libelle + (c.variante === 'reussite' ? ' (quiz réussi)' : ' (quiz échoué)') };
+    });
   }
+
+  /* Réponse absente : le champ n'existait pas lors de la participation, ou appartient
+     à l'autre variante. On laisse la cellule vide plutôt que d'afficher « non »,
+     qui ferait croire à tort à un refus. */
+  function reponseAbsente(valeur) { return valeur === null || valeur === undefined; }
 
   function valeurLisible(valeur, type) {
+    if (reponseAbsente(valeur)) return '';
     if (type === 'consentement') return valeur === true ? 'oui' : 'non';
     if (Array.isArray(valeur)) return valeur.join(', ');
-    return valeur === null || valeur === undefined ? '' : String(valeur);
+    return String(valeur);
   }
 
-  Admin.rendreProspects = function () {
-    var prospects = Stockage.chargerProspects();
-    var colonnes = colonnesFormulaire();
-    Utils.$('#prospects-compte').textContent =
-      prospects.length === 0 ? 'Aucun prospect enregistré pour le moment.'
-        : prospects.length + ' prospect' + (prospects.length > 1 ? 's' : '') + ' enregistré' + (prospects.length > 1 ? 's' : '') + '.';
+  /* Le classement s'appuie uniquement sur le résultat figé lors de la participation.
+     Changer le seuil de réussite dans les Réglages ne redistribue donc jamais
+     rétroactivement les prospects déjà enregistrés d'un tableau à l'autre. */
+  function aReussi(p) {
+    var q = p.quiz || {};
+    if (typeof q.reussi === 'boolean') return q.reussi;
+    return p.variante === 'reussite';
+  }
 
-    var table = Utils.vider(Utils.$('#prospects-table'));
+  /* Navigation latérale des prospects : un seul tableau visible à la fois */
+  Admin.activerSectionProspect = function (nom) {
+    sectionProspectActive = nom;
+    Utils.$$('#panneau-prospects .panneau-nav-item').forEach(function (b) {
+      b.classList.toggle('actif', b.dataset.sectionProspect === nom);
+    });
+    Utils.$$('#panneau-prospects .section-reglage').forEach(function (section) {
+      section.classList.toggle('cache', section.dataset.sectionProspect !== nom);
+    });
+  };
+
+  /* Construit un tableau de prospects; la colonne « Lot gagné » n'a de sens qu'en cas de réussite */
+  function remplirTableProspects(table, liste, colonnes, avecLot) {
+    Utils.vider(table);
     var entete = Utils.creer('tr');
     ['#', 'Date'].forEach(function (t) { entete.appendChild(Utils.creer('th', null, t)); });
     colonnes.forEach(function (c) { entete.appendChild(Utils.creer('th', null, c.libelle)); });
-    ['Score', 'Lot gagné', 'Réponses au quiz'].forEach(function (t) { entete.appendChild(Utils.creer('th', null, t)); });
+    var fin = avecLot ? ['Score', 'Lot gagné', 'Réponses au quiz'] : ['Score', 'Réponses au quiz'];
+    fin.forEach(function (t) { entete.appendChild(Utils.creer('th', null, t)); });
     table.appendChild(entete);
 
-    prospects.slice().reverse().forEach(function (p, i) {
+    liste.slice().reverse().forEach(function (p, i) {
       var ligne = Utils.creer('tr');
-      ligne.appendChild(Utils.creer('td', null, String(prospects.length - i)));
+      ligne.appendChild(Utils.creer('td', null, String(liste.length - i)));
       ligne.appendChild(Utils.creer('td', null, Utils.dateLisible(p.horodatage)));
 
       colonnes.forEach(function (c) {
@@ -1823,10 +1936,13 @@ tr:nth-child(even) td{background:#F7FAF1}
 
       var q = p.quiz || {};
       ligne.appendChild(Utils.creer('td', null, (q.score || 0) + '/' + (q.total || 0) + ' (' + (q.pourcentage || 0) + '%)'));
-      var celluleLot = Utils.creer('td');
-      if (p.lot && p.lot.libelle) celluleLot.textContent = p.lot.libelle;
-      else celluleLot.appendChild(Utils.creer('span', { class: 'pastille neutre' }, 'Aucun'));
-      ligne.appendChild(celluleLot);
+
+      if (avecLot) {
+        var celluleLot = Utils.creer('td');
+        if (p.lot && p.lot.libelle) celluleLot.textContent = p.lot.libelle;
+        else celluleLot.appendChild(Utils.creer('span', { class: 'pastille neutre' }, 'Aucun'));
+        ligne.appendChild(celluleLot);
+      }
 
       var detail = Utils.creer('td');
       (q.reponses || []).forEach(function (r, k) {
@@ -1836,13 +1952,42 @@ tr:nth-child(even) td{background:#F7FAF1}
       ligne.appendChild(detail);
       table.appendChild(ligne);
     });
+  }
+
+  function phraseCompte(nombre, aucun, verbeSingulier, verbePluriel) {
+    if (nombre === 0) return aucun;
+    return nombre + ' prospect' + (nombre > 1 ? 's ' : ' ') + (nombre > 1 ? verbePluriel : verbeSingulier) + '.';
+  }
+
+  Admin.rendreProspects = function () {
+    var prospects = Stockage.chargerProspects();
+    var gagnes = prospects.filter(aReussi);
+    var echoues = prospects.filter(function (p) { return !aReussi(p); });
+
+    Utils.$('#nav-compte-gagnes').textContent = String(gagnes.length);
+    Utils.$('#nav-compte-echoues').textContent = String(echoues.length);
+    Utils.$('#prospects-compte-gagnes').textContent =
+      phraseCompte(gagnes.length, 'Aucun prospect n’a encore réussi le quiz.', 'a réussi le quiz', 'ont réussi le quiz');
+    Utils.$('#prospects-compte-echoues').textContent =
+      phraseCompte(echoues.length, 'Aucun prospect n’a échoué au quiz pour le moment.', 'a échoué au quiz', 'ont échoué au quiz');
+
+    remplirTableProspects(Utils.$('#prospects-table-gagnes'), gagnes, colonnesVariante('reussite'), true);
+    remplirTableProspects(Utils.$('#prospects-table-echoues'), echoues, colonnesVariante('echec'), false);
+    Admin.activerSectionProspect(sectionProspectActive);
   };
 
-  /* F3.4 : export CSV compatible Excel */
-  Admin.exporterCSV = function () {
+  /* F3.4 : export CSV compatible Excel; « filtre » vaut 'gagnes', 'echoues' ou rien pour tout exporter */
+  Admin.exporterCSV = function (filtre) {
     var prospects = Stockage.chargerProspects();
+    var suffixe = '', colonnes = colonnesToutes();
+    if (filtre === 'gagnes') {
+      prospects = prospects.filter(aReussi);
+      colonnes = colonnesVariante('reussite'); suffixe = '_reussis';
+    } else if (filtre === 'echoues') {
+      prospects = prospects.filter(function (p) { return !aReussi(p); });
+      colonnes = colonnesVariante('echec'); suffixe = '_echoues';
+    }
     if (prospects.length === 0) { alert('Aucun prospect à exporter.'); return; }
-    var colonnes = colonnesFormulaire();
     var lignes = [['Date'].concat(colonnes.map(function (c) { return c.libelle; }))
       .concat(['Score', 'Total', 'Pourcentage', 'Réussi', 'Lot gagné', 'Réponses au quiz'])];
 
@@ -1862,7 +2007,8 @@ tr:nth-child(even) td{background:#F7FAF1}
       return ligne.map(function (cellule) { return '"' + String(cellule).replace(/"/g, '""') + '"'; }).join(';');
     }).join('\r\n');
 
-    telecharger(csv, 'text/csv;charset=utf-8', 'prospects_CRAAQ_' + new Date().toISOString().slice(0, 10) + '.csv');
+    telecharger(csv, 'text/csv;charset=utf-8',
+      'prospects_CRAAQ' + suffixe + '_' + new Date().toISOString().slice(0, 10) + '.csv');
   };
 
   function telecharger(contenu, type, nomFichier) {
@@ -1917,7 +2063,7 @@ tr:nth-child(even) td{background:#F7FAF1}
   /* Navigation latérale des réglages : une seule section visible à la fois */
   Admin.activerSectionReglage = function (nom) {
     sectionReglageActive = nom;
-    Utils.$$('.reglages-nav-item').forEach(function (b) {
+    Utils.$$('#panneau-reglages .panneau-nav-item').forEach(function (b) {
       b.classList.toggle('actif', b.dataset.sectionReglage === nom);
     });
     Utils.$$('#panneau-reglages .section-reglage').forEach(function (section) {
@@ -2193,6 +2339,53 @@ tr:nth-child(even) td{background:#F7FAF1}
 
   /* ----- Formulaire (F4.5) ----- */
   var varianteEditee = 'reussite';
+  /* Champs retirés du brouillon dont les réponses restent à purger, par identifiant */
+  var suppressionsEnAttente = {};
+
+  /* Un champ déjà renseigné ne disparaît jamais sans un avertissement explicite. */
+  function confirmerSuppressionChamp(champ) {
+    var nom = champ.libelle || 'ce champ';
+    var nombre = Stockage.compterProspectsAvecChamp(champ.id);
+
+    if (nombre === 0) return confirm('Supprimer le champ « ' + nom + ' »?\n\nAucun prospect enregistré n’a de réponse pour ce champ.');
+
+    var pluriel = nombre > 1;
+    var accepte = confirm(
+      'ATTENTION — SUPPRESSION DÉFINITIVE DE DONNÉES\n\n' +
+      'Le champ « ' + nom + ' » contient déjà des réponses : ' +
+      nombre + ' prospect' + (pluriel ? 's' : '') + ' enregistré' + (pluriel ? 's' : '') +
+      ' y ' + (pluriel ? 'ont' : 'a') + ' répondu.\n\n' +
+      'Si vous continuez, ces réponses seront supprimées DÉFINITIVEMENT des prospects existants ' +
+      'dès que vous cliquerez sur « Enregistrer le formulaire ». Elles seront alors irrécupérables, ' +
+      'y compris dans les exports CSV réalisés ensuite.\n\n' +
+      'Les autres champs et toutes les autres données des prospects restent intacts.\n\n' +
+      'Conseil : exportez d’abord les prospects en CSV si vous souhaitez en garder une trace.\n\n' +
+      'OK = supprimer définitivement le champ et ses données\n' +
+      'Annuler = ne rien modifier'
+    );
+    if (!accepte) return false;                 /* ni la configuration ni les données ne bougent */
+    suppressionsEnAttente[champ.id] = nom;
+    return true;
+  }
+
+  /* Les réponses ne sont effacées qu'une fois la nouvelle configuration réellement
+     enregistrée : tant que l'administrateur n'enregistre pas, rien n'est perdu. */
+  function appliquerSuppressionsEnAttente() {
+    var ids = Object.keys(suppressionsEnAttente);
+    if (ids.length === 0) return;
+
+    var champsConserves = {};
+    ['reussite', 'echec'].forEach(function (nom) {
+      Formulaire.champsTries(config().formulaire[nom]).forEach(function (c) { champsConserves[c.id] = true; });
+    });
+
+    ids.forEach(function (id) {
+      /* Champ finalement rétabli avant l'enregistrement : ses réponses sont préservées. */
+      if (!champsConserves[id]) Stockage.supprimerChampProspects(id);
+      delete suppressionsEnAttente[id];
+    });
+    Admin.rendreProspects();
+  }
 
   Admin.changerVariante = function (nom) {
     varianteEditee = nom;
@@ -2221,7 +2414,7 @@ tr:nth-child(even) td{background:#F7FAF1}
       outils.appendChild(bouton('↓', function () { deplacerChamp(variante, index, 1); }, index === champs.length - 1));
       outils.appendChild(bouton('Supprimer', function () {
         if (champ.type === 'courriel') { alert('Le champ courriel est requis : il sert à identifier le participant et à envoyer le prix.'); return; }
-        if (!confirm('Supprimer ce champ?')) return;
+        if (!confirmerSuppressionChamp(champ)) return;
         variante.champs.splice(index, 1);
         Admin.rendreFormulaireReglage();
       }, false, true));
@@ -2322,9 +2515,10 @@ tr:nth-child(even) td{background:#F7FAF1}
   Admin.enregistrerFormulaire = function () {
     var variante = brouillon.formulaire[varianteEditee];
     variante.champs.forEach(function (c, i) { c.ordre = i + 1; });
-    enregistrerSection(function (candidate) {
+    var enregistre = enregistrerSection(function (candidate) {
       candidate.formulaire = Utils.copieProfonde(brouillon.formulaire);
     }, Validation.validerFormulaire(brouillon.formulaire), Utils.$('#avis-formulaire'), 'Formulaire enregistré.');
+    if (enregistre) appliquerSuppressionsEnAttente();
     Admin.rendreFormulaireReglage();
   };
 
@@ -2425,13 +2619,22 @@ tr:nth-child(even) td{background:#F7FAF1}
     lier('admin-quitter', 'click', Admin.fermer);
 
     /* Navigation latérale des réglages */
-    Utils.$$('.reglages-nav-item').forEach(function (element) {
+    Utils.$$('#panneau-reglages .panneau-nav-item').forEach(function (element) {
       element.addEventListener('click', function () { Admin.activerSectionReglage(element.dataset.sectionReglage); });
     });
 
+    /* Navigation latérale des prospects */
+    Utils.$$('#panneau-prospects .panneau-nav-item').forEach(function (element) {
+      element.addEventListener('click', function () { Admin.activerSectionProspect(element.dataset.sectionProspect); });
+    });
+
     /* Prospects */
-    lier('prospects-exporter', 'click', Admin.exporterCSV);
+    lier('prospects-exporter-gagnes', 'click', function () { Admin.exporterCSV('gagnes'); });
+    lier('prospects-exporter-echoues', 'click', function () { Admin.exporterCSV('echoues'); });
+    lier('prospects-exporter', 'click', function () { Admin.exporterCSV(); });
+    lier('prospects-exporter-2', 'click', function () { Admin.exporterCSV(); });
     lier('prospects-rafraichir', 'click', Admin.rendreProspects);
+    lier('prospects-rafraichir-2', 'click', Admin.rendreProspects);
 
     /* Accueil et seuil */
     lier('accueil-enregistrer', 'click', Admin.enregistrerAccueil);
