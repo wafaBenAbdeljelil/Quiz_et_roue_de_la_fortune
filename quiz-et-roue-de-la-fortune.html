@@ -1925,7 +1925,9 @@ tr:nth-child(even) td{background:#F7FAF1}
       colonnes.forEach(function (c) {
         var valeur = p.reponsesFormulaire ? p.reponsesFormulaire[c.id] : undefined;
         var cellule = Utils.creer('td');
-        if (c.type === 'consentement') {
+        if (c.type === 'consentement' && reponseAbsente(valeur)) {
+          cellule.appendChild(Utils.creer('span', { class: 'pastille neutre' }, 'Non renseigné'));
+        } else if (c.type === 'consentement') {
           var oui = valeur === true;
           cellule.appendChild(Utils.creer('span', { class: 'pastille ' + (oui ? 'oui' : 'non') }, oui ? 'Oui' : 'Non'));
         } else {
